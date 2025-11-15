@@ -1,0 +1,33 @@
+# Dependencies
+node_modules/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Build outputs
+dist/
+.out/
+.cache/
+.tmp/
+
+# Vite
+.vite/
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Cloudflare Wrangler local state
+.wrangler/
+
+# Tests
+coverage/
+
+# Editor & OS
+.DS_Store
+.idea/
+.vscode/
