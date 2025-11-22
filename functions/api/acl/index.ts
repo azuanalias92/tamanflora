@@ -11,7 +11,7 @@ export async function onRequestGet({ request, env }: { request: Request; env: { 
       headers: { 'content-type': 'application/json' },
     })
   }
-  const role = await env.DB.prepare(`SELECT id FROM roles WHERE name = ?`).bind(roleName).first()
+  const role = await env.DB.prepare(`SELECT id FROM roles WHERE lower(name) = lower(?)`).bind(roleName).first()
   if (!role) {
     return new Response(JSON.stringify([]), { headers: { 'content-type': 'application/json' } })
   }
@@ -37,7 +37,7 @@ export async function onRequestPost({ request, env }: { request: Request; env: {
       headers: { 'content-type': 'application/json' },
     })
   }
-  let role = await env.DB.prepare(`SELECT id FROM roles WHERE name = ?`).bind(roleName).first()
+  let role = await env.DB.prepare(`SELECT id FROM roles WHERE lower(name) = lower(?)`).bind(roleName).first()
   if (!role) {
     const id = crypto.randomUUID()
     await env.DB.prepare(

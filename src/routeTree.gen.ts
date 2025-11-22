@@ -29,13 +29,10 @@ import { Route as AuthenticatedUsersIndexRouteImport } from './routes/_authentic
 import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authenticated/settings/index'
 import { Route as AuthenticatedRolesIndexRouteImport } from './routes/_authenticated/roles/index'
 import { Route as AuthenticatedHomestayIndexRouteImport } from './routes/_authenticated/homestay/index'
-import { Route as AuthenticatedHelpCenterIndexRouteImport } from './routes/_authenticated/help-center/index'
 import { Route as AuthenticatedDirectoryIndexRouteImport } from './routes/_authenticated/directory/index'
 import { Route as AuthenticatedCheckpointsIndexRouteImport } from './routes/_authenticated/checkpoints/index'
 import { Route as AuthenticatedCheckInIndexRouteImport } from './routes/_authenticated/check-in/index'
 import { Route as AuthenticatedCheckInLogsIndexRouteImport } from './routes/_authenticated/check-in-logs/index'
-import { Route as AuthenticatedChatsIndexRouteImport } from './routes/_authenticated/chats/index'
-import { Route as AuthenticatedAppsIndexRouteImport } from './routes/_authenticated/apps/index'
 import { Route as ClerkAuthenticatedUserManagementRouteImport } from './routes/clerk/_authenticated/user-management'
 import { Route as ClerkauthSignUpRouteImport } from './routes/clerk/(auth)/sign-up'
 import { Route as ClerkauthSignInRouteImport } from './routes/clerk/(auth)/sign-in'
@@ -147,12 +144,6 @@ const AuthenticatedHomestayIndexRoute =
     path: '/homestay/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedHelpCenterIndexRoute =
-  AuthenticatedHelpCenterIndexRouteImport.update({
-    id: '/help-center/',
-    path: '/help-center/',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
 const AuthenticatedDirectoryIndexRoute =
   AuthenticatedDirectoryIndexRouteImport.update({
     id: '/directory/',
@@ -177,16 +168,6 @@ const AuthenticatedCheckInLogsIndexRoute =
     path: '/check-in-logs/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedChatsIndexRoute = AuthenticatedChatsIndexRouteImport.update({
-  id: '/chats/',
-  path: '/chats/',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedAppsIndexRoute = AuthenticatedAppsIndexRouteImport.update({
-  id: '/apps/',
-  path: '/apps/',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
 const ClerkAuthenticatedUserManagementRoute =
   ClerkAuthenticatedUserManagementRouteImport.update({
     id: '/user-management',
@@ -270,13 +251,10 @@ export interface FileRoutesByFullPath {
   '/clerk/sign-in': typeof ClerkauthSignInRoute
   '/clerk/sign-up': typeof ClerkauthSignUpRoute
   '/clerk/user-management': typeof ClerkAuthenticatedUserManagementRoute
-  '/apps': typeof AuthenticatedAppsIndexRoute
-  '/chats': typeof AuthenticatedChatsIndexRoute
   '/check-in-logs': typeof AuthenticatedCheckInLogsIndexRoute
   '/check-in': typeof AuthenticatedCheckInIndexRoute
   '/checkpoints': typeof AuthenticatedCheckpointsIndexRoute
   '/directory': typeof AuthenticatedDirectoryIndexRoute
-  '/help-center': typeof AuthenticatedHelpCenterIndexRoute
   '/homestay': typeof AuthenticatedHomestayIndexRoute
   '/roles': typeof AuthenticatedRolesIndexRoute
   '/settings/': typeof AuthenticatedSettingsIndexRoute
@@ -305,13 +283,10 @@ export interface FileRoutesByTo {
   '/clerk/sign-in': typeof ClerkauthSignInRoute
   '/clerk/sign-up': typeof ClerkauthSignUpRoute
   '/clerk/user-management': typeof ClerkAuthenticatedUserManagementRoute
-  '/apps': typeof AuthenticatedAppsIndexRoute
-  '/chats': typeof AuthenticatedChatsIndexRoute
   '/check-in-logs': typeof AuthenticatedCheckInLogsIndexRoute
   '/check-in': typeof AuthenticatedCheckInIndexRoute
   '/checkpoints': typeof AuthenticatedCheckpointsIndexRoute
   '/directory': typeof AuthenticatedDirectoryIndexRoute
-  '/help-center': typeof AuthenticatedHelpCenterIndexRoute
   '/homestay': typeof AuthenticatedHomestayIndexRoute
   '/roles': typeof AuthenticatedRolesIndexRoute
   '/settings': typeof AuthenticatedSettingsIndexRoute
@@ -345,13 +320,10 @@ export interface FileRoutesById {
   '/clerk/(auth)/sign-in': typeof ClerkauthSignInRoute
   '/clerk/(auth)/sign-up': typeof ClerkauthSignUpRoute
   '/clerk/_authenticated/user-management': typeof ClerkAuthenticatedUserManagementRoute
-  '/_authenticated/apps/': typeof AuthenticatedAppsIndexRoute
-  '/_authenticated/chats/': typeof AuthenticatedChatsIndexRoute
   '/_authenticated/check-in-logs/': typeof AuthenticatedCheckInLogsIndexRoute
   '/_authenticated/check-in/': typeof AuthenticatedCheckInIndexRoute
   '/_authenticated/checkpoints/': typeof AuthenticatedCheckpointsIndexRoute
   '/_authenticated/directory/': typeof AuthenticatedDirectoryIndexRoute
-  '/_authenticated/help-center/': typeof AuthenticatedHelpCenterIndexRoute
   '/_authenticated/homestay/': typeof AuthenticatedHomestayIndexRoute
   '/_authenticated/roles/': typeof AuthenticatedRolesIndexRoute
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
@@ -383,13 +355,10 @@ export interface FileRouteTypes {
     | '/clerk/sign-in'
     | '/clerk/sign-up'
     | '/clerk/user-management'
-    | '/apps'
-    | '/chats'
     | '/check-in-logs'
     | '/check-in'
     | '/checkpoints'
     | '/directory'
-    | '/help-center'
     | '/homestay'
     | '/roles'
     | '/settings/'
@@ -418,13 +387,10 @@ export interface FileRouteTypes {
     | '/clerk/sign-in'
     | '/clerk/sign-up'
     | '/clerk/user-management'
-    | '/apps'
-    | '/chats'
     | '/check-in-logs'
     | '/check-in'
     | '/checkpoints'
     | '/directory'
-    | '/help-center'
     | '/homestay'
     | '/roles'
     | '/settings'
@@ -457,13 +423,10 @@ export interface FileRouteTypes {
     | '/clerk/(auth)/sign-in'
     | '/clerk/(auth)/sign-up'
     | '/clerk/_authenticated/user-management'
-    | '/_authenticated/apps/'
-    | '/_authenticated/chats/'
     | '/_authenticated/check-in-logs/'
     | '/_authenticated/check-in/'
     | '/_authenticated/checkpoints/'
     | '/_authenticated/directory/'
-    | '/_authenticated/help-center/'
     | '/_authenticated/homestay/'
     | '/_authenticated/roles/'
     | '/_authenticated/settings/'
@@ -627,13 +590,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedHomestayIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/help-center/': {
-      id: '/_authenticated/help-center/'
-      path: '/help-center'
-      fullPath: '/help-center'
-      preLoaderRoute: typeof AuthenticatedHelpCenterIndexRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/directory/': {
       id: '/_authenticated/directory/'
       path: '/directory'
@@ -660,20 +616,6 @@ declare module '@tanstack/react-router' {
       path: '/check-in-logs'
       fullPath: '/check-in-logs'
       preLoaderRoute: typeof AuthenticatedCheckInLogsIndexRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/chats/': {
-      id: '/_authenticated/chats/'
-      path: '/chats'
-      fullPath: '/chats'
-      preLoaderRoute: typeof AuthenticatedChatsIndexRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/apps/': {
-      id: '/_authenticated/apps/'
-      path: '/apps'
-      fullPath: '/apps'
-      preLoaderRoute: typeof AuthenticatedAppsIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/clerk/_authenticated/user-management': {
@@ -780,13 +722,10 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedErrorsErrorRoute: typeof AuthenticatedErrorsErrorRoute
   AuthenticatedHomestayHomestayIdRoute: typeof AuthenticatedHomestayHomestayIdRoute
-  AuthenticatedAppsIndexRoute: typeof AuthenticatedAppsIndexRoute
-  AuthenticatedChatsIndexRoute: typeof AuthenticatedChatsIndexRoute
   AuthenticatedCheckInLogsIndexRoute: typeof AuthenticatedCheckInLogsIndexRoute
   AuthenticatedCheckInIndexRoute: typeof AuthenticatedCheckInIndexRoute
   AuthenticatedCheckpointsIndexRoute: typeof AuthenticatedCheckpointsIndexRoute
   AuthenticatedDirectoryIndexRoute: typeof AuthenticatedDirectoryIndexRoute
-  AuthenticatedHelpCenterIndexRoute: typeof AuthenticatedHelpCenterIndexRoute
   AuthenticatedHomestayIndexRoute: typeof AuthenticatedHomestayIndexRoute
   AuthenticatedRolesIndexRoute: typeof AuthenticatedRolesIndexRoute
   AuthenticatedUsersIndexRoute: typeof AuthenticatedUsersIndexRoute
@@ -797,13 +736,10 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   AuthenticatedErrorsErrorRoute: AuthenticatedErrorsErrorRoute,
   AuthenticatedHomestayHomestayIdRoute: AuthenticatedHomestayHomestayIdRoute,
-  AuthenticatedAppsIndexRoute: AuthenticatedAppsIndexRoute,
-  AuthenticatedChatsIndexRoute: AuthenticatedChatsIndexRoute,
   AuthenticatedCheckInLogsIndexRoute: AuthenticatedCheckInLogsIndexRoute,
   AuthenticatedCheckInIndexRoute: AuthenticatedCheckInIndexRoute,
   AuthenticatedCheckpointsIndexRoute: AuthenticatedCheckpointsIndexRoute,
   AuthenticatedDirectoryIndexRoute: AuthenticatedDirectoryIndexRoute,
-  AuthenticatedHelpCenterIndexRoute: AuthenticatedHelpCenterIndexRoute,
   AuthenticatedHomestayIndexRoute: AuthenticatedHomestayIndexRoute,
   AuthenticatedRolesIndexRoute: AuthenticatedRolesIndexRoute,
   AuthenticatedUsersIndexRoute: AuthenticatedUsersIndexRoute,

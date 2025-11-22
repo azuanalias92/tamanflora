@@ -26,10 +26,7 @@ function resourceList() {
     '/checkpoints',
     '/check-in',
     '/check-in-logs',
-    '/apps',
-    '/chats',
     '/directory',
-    '/help-center',
     '/homestay',
     '/settings',
   ]

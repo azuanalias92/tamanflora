@@ -72,11 +72,13 @@ export const sidebarData: SidebarData = {
               title: "Profile",
               url: "/settings",
               icon: UserCog,
+              requiredPermission: { resource: "/settings", action: "read" },
             },
             {
               title: "Change Password",
               url: "/settings/change-password",
               icon: Lock,
+              requiredPermission: { resource: "/settings", action: "read" },
             },
             {
               title: "Roles",
@@ -88,6 +90,7 @@ export const sidebarData: SidebarData = {
               title: "Appearance",
               url: "/settings/appearance",
               icon: Palette,
+              requiredPermission: { resource: "/settings", action: "read" },
             },
           ],
         },
