@@ -1,68 +1,79 @@
-import { useQuery } from '@tanstack/react-query'
-import { Link } from '@tanstack/react-router'
-import { Header } from '@/components/layout/header'
-import { Main } from '@/components/layout/main'
-import { Search } from '@/components/search'
-import { ThemeSwitch } from '@/components/theme-switch'
-import { ConfigDrawer } from '@/components/config-drawer'
-import { ProfileDropdown } from '@/components/profile-dropdown'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Button } from '@/components/ui/button'
-import { format } from 'date-fns'
+import { useQuery } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
+import { Header } from "@/components/layout/header";
+import { Main } from "@/components/layout/main";
+import { Search } from "@/components/search";
+import { ThemeSwitch } from "@/components/theme-switch";
+import { ConfigDrawer } from "@/components/config-drawer";
+import { ProfileDropdown } from "@/components/profile-dropdown";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { format } from "date-fns";
+import { useAuthStore } from "@/stores/auth-store";
 
-type ResidentOwner = { name: string; phone: string; userId?: string }
-type Resident = { id: string; houseNo: string; houseType: string; owners: ResidentOwner[]; vehicles: { brand: string; model: string; plate: string }[] }
+type ResidentOwner = { name: string; phone: string; userId?: string };
+type Resident = { id: string; houseNo: string; houseType: string; owners: ResidentOwner[]; vehicles: { brand: string; model: string; plate: string }[] };
 type HomestayCheckIn = {
-  id: string
-  homestayId: string
-  personInCharge: string
-  numberOfGuests: number
-  numberPlates: string[]
-  dateOfArrival?: string
-  dateOfDeparture?: string
-  additionalNotes?: string
-  submittedAt: string
-}
+  id: string;
+  homestayId: string;
+  personInCharge: string;
+  numberOfGuests: number;
+  numberPlates: string[];
+  dateOfArrival?: string;
+  dateOfDeparture?: string;
+  additionalNotes?: string;
+  submittedAt: string;
+};
 
 export function HomestayCheckins() {
   const { data, isLoading, error } = useQuery({
-    queryKey: ['homestay-list-with-latest'],
+    queryKey: ["homestay-list-with-latest"],
     queryFn: async () => {
-      const residentsUrl = new URL('/api/residents', window.location.origin)
-      residentsUrl.searchParams.append('houseType', 'homestay')
-      residentsUrl.searchParams.set('page', '1')
-      residentsUrl.searchParams.set('pageSize', '100')
+      const token = useAuthStore.getState().auth.accessToken;
 
-      const latestUrl = new URL('/api/homestay-checkins', window.location.origin)
-      latestUrl.searchParams.set('latestByHomestay', 'true')
+      const residentsUrl = new URL("/api/residents", window.location.origin);
+      residentsUrl.searchParams.append("houseType", "homestay");
+      residentsUrl.searchParams.set("page", "1");
+      residentsUrl.searchParams.set("pageSize", "100");
+
+      const latestUrl = new URL("/api/homestay-checkins", window.location.origin);
+      latestUrl.searchParams.set("latestByHomestay", "true");
 
       const [resResidents, resLatest] = await Promise.all([
-        fetch(residentsUrl.toString()),
-        fetch(latestUrl.toString()),
-      ])
+        fetch(residentsUrl.toString(), {
+          headers: {
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+        }),
+        fetch(latestUrl.toString(), {
+          headers: {
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+        }),
+      ]);
 
-      const residentsJson = resResidents.status === 204 ? { data: [] } : await resResidents.json()
-      const latestJson = resLatest.status === 204 ? { data: [] } : await resLatest.json()
+      const residentsJson = resResidents.status === 204 ? { data: [] } : await resResidents.json();
+      const latestJson = resLatest.status === 204 ? { data: [] } : await resLatest.json();
 
-      const residents = (residentsJson.data ?? []) as Resident[]
-      const latestList = (latestJson.data ?? []) as HomestayCheckIn[]
-      const latestMap = new Map<string, HomestayCheckIn>()
-      for (const item of latestList) latestMap.set(item.homestayId, item)
+      const residents = (residentsJson.data ?? []) as Resident[];
+      const latestList = (latestJson.data ?? []) as HomestayCheckIn[];
+      const latestMap = new Map<string, HomestayCheckIn>();
+      for (const item of latestList) latestMap.set(item.homestayId, item);
 
-      const residentMap = new Map<string, Resident>()
-      for (const r of residents) residentMap.set(r.houseNo, r)
+      const residentMap = new Map<string, Resident>();
+      for (const r of residents) residentMap.set(r.houseNo, r);
 
-      const unionHouseNos = new Set<string>([...residentMap.keys(), ...latestMap.keys()])
+      const unionHouseNos = new Set<string>([...residentMap.keys(), ...latestMap.keys()]);
       const rows = Array.from(unionHouseNos).map((houseNo) => {
-        const r = residentMap.get(houseNo)
-        return r ?? ({ id: `homestay-${houseNo}`, houseNo, houseType: 'homestay', owners: [], vehicles: [] } as Resident)
-      })
+        const r = residentMap.get(houseNo);
+        return r ?? ({ id: `homestay-${houseNo}`, houseNo, houseType: "homestay", owners: [], vehicles: [] } as Resident);
+      });
 
-      return { residents: rows, latestMap }
+      return { residents: rows, latestMap };
     },
-  })
+  });
 
-  const rows = data?.residents ?? []
+  const rows = data?.residents ?? [];
 
   return (
     <>
@@ -103,24 +114,29 @@ export function HomestayCheckins() {
               </TableHeader>
               <TableBody>
                 {rows.map((r) => {
-                  const latest = data?.latestMap.get(r.houseNo)
-                  const owners = r.owners?.map((o) => o.name).filter(Boolean).join(', ')
+                  const latest = data?.latestMap.get(r.houseNo);
+                  const owners = r.owners
+                    ?.map((o) => o.name)
+                    .filter(Boolean)
+                    .join(", ");
                   return (
                     <TableRow key={r.id}>
                       <TableCell>{r.houseNo}</TableCell>
-                      <TableCell>{owners || '-'}</TableCell>
-                      <TableCell>{latest?.personInCharge || '-'}</TableCell>
-                      <TableCell>{latest?.numberOfGuests ?? '-'}</TableCell>
-                      <TableCell>{latest?.dateOfArrival ? format(new Date(latest.dateOfArrival), 'dd/MM/yyyy') : '-'}</TableCell>
-                      <TableCell>{latest?.dateOfDeparture ? format(new Date(latest.dateOfDeparture), 'dd/MM/yyyy') : '-'}</TableCell>
-                      <TableCell>{latest?.numberPlates?.length ? latest.numberPlates.join(', ') : '-'}</TableCell>
+                      <TableCell>{owners || "-"}</TableCell>
+                      <TableCell>{latest?.personInCharge || "-"}</TableCell>
+                      <TableCell>{latest?.numberOfGuests ?? "-"}</TableCell>
+                      <TableCell>{latest?.dateOfArrival ? format(new Date(latest.dateOfArrival), "dd/MM/yyyy") : "-"}</TableCell>
+                      <TableCell>{latest?.dateOfDeparture ? format(new Date(latest.dateOfDeparture), "dd/MM/yyyy") : "-"}</TableCell>
+                      <TableCell>{latest?.numberPlates?.length ? latest.numberPlates.join(", ") : "-"}</TableCell>
                       <TableCell>
                         <Button asChild variant="outline" size="sm">
-                          <Link to="/homestay/$homestayId" params={{ homestayId: r.houseNo }}>Check In</Link>
+                          <Link to="/homestay/$homestayId" params={{ homestayId: r.houseNo }}>
+                            Check In
+                          </Link>
                         </Button>
                       </TableCell>
                     </TableRow>
-                  )
+                  );
                 })}
               </TableBody>
             </Table>
@@ -128,5 +144,5 @@ export function HomestayCheckins() {
         )}
       </Main>
     </>
-  )
+  );
 }

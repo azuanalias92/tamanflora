@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { getRouteApi } from '@tanstack/react-router'
+import { useEffect, useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { getRouteApi } from "@tanstack/react-router";
 import {
   type SortingState,
   type VisibilityState,
@@ -12,46 +12,39 @@ import {
   getPaginationRowModel,
   getSortedRowModel,
   useReactTable,
-} from '@tanstack/react-table'
-import { cn } from '@/lib/utils'
-import { useTableUrlState } from '@/hooks/use-table-url-state'
-import { toast } from 'sonner'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
-import { Button } from '@/components/ui/button'
-import { Plus } from 'lucide-react'
-import { DataTablePagination, DataTableToolbar } from '@/components/data-table'
-import { houseTypes } from '../data/data'
-import { type Task } from '../data/schema'
-import { ResidentDialog } from './resident-dialog'
-import { ResidentDeleteDialog } from './resident-delete-dialog'
+} from "@tanstack/react-table";
+import { cn } from "@/lib/utils";
+import { useTableUrlState } from "@/hooks/use-table-url-state";
+import { toast } from "sonner";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { Plus } from "lucide-react";
+import { DataTablePagination, DataTableToolbar } from "@/components/data-table";
+import { houseTypes } from "../data/data";
+import { type Task } from "../data/schema";
+import { ResidentDialog } from "./resident-dialog";
+import { ResidentDeleteDialog } from "./resident-delete-dialog";
 // import { DataTableBulkActions } from './data-table-bulk-actions'
-import { tasksColumns as columns } from './tasks-columns'
+import { tasksColumns as columns } from "./tasks-columns";
 
-const route = getRouteApi('/_authenticated/directory/')
+const route = getRouteApi("/_authenticated/directory/");
 
 type DataTableProps = {
-  data?: Task[]
-}
+  data?: Task[];
+};
 
 export function TasksTable({ data }: DataTableProps) {
-  const queryClient = useQueryClient()
+  const queryClient = useQueryClient();
   // Local UI-only states
-  const [rowSelection, setRowSelection] = useState({})
-  const [sorting, setSorting] = useState<SortingState>([])
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
-  
+  const [rowSelection, setRowSelection] = useState({});
+  const [sorting, setSorting] = useState<SortingState>([]);
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
+
   // CRUD dialog states
-  const [dialogOpen, setDialogOpen] = useState(false)
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
-  const [selectedResident, setSelectedResident] = useState<Task | null>(null)
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [selectedResident, setSelectedResident] = useState<Task | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Local state management for table (uncomment to use local-only state, not synced with URL)
   // const [globalFilter, onGlobalFilterChange] = useState('')
@@ -59,156 +52,171 @@ export function TasksTable({ data }: DataTableProps) {
   // const [pagination, onPaginationChange] = useState<PaginationState>({ pageIndex: 0, pageSize: 10 })
 
   // Synced with URL states (updated to match route search schema defaults)
-  const {
-    globalFilter,
-    onGlobalFilterChange,
-    columnFilters,
-    onColumnFiltersChange,
-    pagination,
-    onPaginationChange,
-    ensurePageInRange,
-  } = useTableUrlState({
+  const { globalFilter, onGlobalFilterChange, columnFilters, onColumnFiltersChange, pagination, onPaginationChange, ensurePageInRange } = useTableUrlState({
     search: route.useSearch(),
     navigate: route.useNavigate(),
     pagination: { defaultPage: 1, defaultPageSize: 10 },
-    globalFilter: { enabled: true, key: 'filter' },
-    columnFilters: [
-      { columnId: 'houseType', searchKey: 'houseType', type: 'array' },
-    ],
-  })
+    globalFilter: { enabled: true, key: "filter" },
+    columnFilters: [{ columnId: "houseType", searchKey: "houseType", type: "array" }],
+  });
 
-  const houseTypeFilter = (columnFilters.find((f) => (f as any).id === 'houseType') as any)?.value as string[] | undefined
+  const houseTypeFilter = (columnFilters.find((f) => (f as any).id === "houseType") as any)?.value as string[] | undefined;
 
   // CRUD mutations
   const createResidentMutation = useMutation({
-    mutationFn: async (data: { houseNo: string; houseType: string; owners: Array<{ name: string; phone: string; userId?: string }>; vehicles: Array<{ brand: string; model: string; plate: string }> }) => {
-      const response = await fetch('/api/residents', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+    mutationFn: async (data: {
+      houseNo: string;
+      houseType: string;
+      owners: Array<{ name: string; phone: string; userId?: string }>;
+      vehicles: Array<{ brand: string; model: string; plate: string }>;
+    }) => {
+      const response = await fetch("/api/residents", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
-      })
+      });
       if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.error || 'Failed to create resident')
+        const error = await response.json();
+        throw new Error(error.error || "Failed to create resident");
       }
-      return response.json()
+      return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['residents'] })
-      toast.success('Resident created successfully')
-      setDialogOpen(false)
-      setSelectedResident(null)
+      queryClient.invalidateQueries({ queryKey: ["residents"] });
+      toast.success("Resident created successfully");
+      setDialogOpen(false);
+      setSelectedResident(null);
     },
     onError: (error: Error) => {
-      toast.error(error.message)
+      toast.error(error.message);
     },
-  })
+  });
 
   const updateResidentMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: { houseNo: string; houseType: string; owners: Array<{ name: string; phone: string; userId?: string }>; vehicles: Array<{ brand: string; model: string; plate: string }> } }) => {
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: {
+        houseNo: string;
+        houseType: string;
+        owners: Array<{ name: string; phone: string; userId?: string }>;
+        vehicles: Array<{ brand: string; model: string; plate: string }>;
+      };
+    }) => {
       const response = await fetch(`/api/residents/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
-      })
+      });
       if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.error || 'Failed to update resident')
+        const error = await response.json();
+        throw new Error(error.error || "Failed to update resident");
       }
-      return response.json()
+      return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['residents'] })
-      toast.success('Resident updated successfully')
-      setDialogOpen(false)
-      setSelectedResident(null)
+      queryClient.invalidateQueries({ queryKey: ["residents"] });
+      toast.success("Resident updated successfully");
+      setDialogOpen(false);
+      setSelectedResident(null);
     },
     onError: (error: Error) => {
-      toast.error(error.message)
+      toast.error(error.message);
     },
-  })
+  });
 
   const deleteResidentMutation = useMutation({
     mutationFn: async (id: string) => {
       const response = await fetch(`/api/residents/${id}`, {
-        method: 'DELETE',
-      })
+        method: "DELETE",
+      });
       if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.error || 'Failed to delete resident')
+        const error = await response.json();
+        throw new Error(error.error || "Failed to delete resident");
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['residents'] })
-      toast.success('Resident deleted successfully')
-      setDeleteDialogOpen(false)
-      setSelectedResident(null)
+      queryClient.invalidateQueries({ queryKey: ["residents"] });
+      toast.success("Resident deleted successfully");
+      setDeleteDialogOpen(false);
+      setSelectedResident(null);
     },
     onError: (error: Error) => {
-      toast.error(error.message)
+      toast.error(error.message);
     },
-  })
+  });
 
   // Event listeners for CRUD operations
   useEffect(() => {
     const handleEditResident = (event: CustomEvent) => {
-      setSelectedResident(event.detail)
-      setDialogOpen(true)
-    }
+      setSelectedResident(event.detail);
+      setDialogOpen(true);
+    };
 
     const handleDeleteResident = (event: CustomEvent) => {
-      setSelectedResident(event.detail)
-      setDeleteDialogOpen(true)
-    }
+      setSelectedResident(event.detail);
+      setDeleteDialogOpen(true);
+    };
 
-    window.addEventListener('editResident', handleEditResident as EventListener)
-    window.addEventListener('deleteResident', handleDeleteResident as EventListener)
+    window.addEventListener("editResident", handleEditResident as EventListener);
+    window.addEventListener("deleteResident", handleDeleteResident as EventListener);
 
     return () => {
-      window.removeEventListener('editResident', handleEditResident as EventListener)
-      window.removeEventListener('deleteResident', handleDeleteResident as EventListener)
-    }
-  }, [])
+      window.removeEventListener("editResident", handleEditResident as EventListener);
+      window.removeEventListener("deleteResident", handleDeleteResident as EventListener);
+    };
+  }, []);
 
-  const handleSubmit = async (data: { houseNo: string; houseType: string; owners: Array<{ name: string; phone: string; userId?: string }>; vehicles: Array<{ brand: string; model: string; plate: string }> }) => {
-    setIsSubmitting(true)
+  const handleSubmit = async (data: {
+    houseNo: string;
+    houseType: string;
+    owners: Array<{ name: string; phone: string; userId?: string }>;
+    vehicles: Array<{ brand: string; model: string; plate: string }>;
+  }) => {
+    setIsSubmitting(true);
     try {
       if (selectedResident) {
-        await updateResidentMutation.mutateAsync({ id: selectedResident.id, data })
+        await updateResidentMutation.mutateAsync({ id: selectedResident.id, data });
       } else {
-        await createResidentMutation.mutateAsync(data)
+        await createResidentMutation.mutateAsync(data);
       }
     } finally {
-      setIsSubmitting(false)
+      setIsSubmitting(false);
     }
-  }
+  };
 
   const handleDeleteConfirm = async () => {
     if (selectedResident) {
-      await deleteResidentMutation.mutateAsync(selectedResident.id)
+      await deleteResidentMutation.mutateAsync(selectedResident.id);
     }
-  }
+  };
 
-  const { data: apiData, isLoading, error } = useQuery({
-    queryKey: ['residents', { page: pagination.pageIndex + 1, pageSize: pagination.pageSize, filter: globalFilter || '', houseType: houseTypeFilter || [] }],
+  const {
+    data: apiData,
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: ["residents", { page: pagination.pageIndex + 1, pageSize: pagination.pageSize, filter: globalFilter || "", houseType: houseTypeFilter || [] }],
     queryFn: async () => {
-      const url = new URL('/api/residents', window.location.origin)
-      url.searchParams.set('page', String(pagination.pageIndex + 1))
-      url.searchParams.set('pageSize', String(pagination.pageSize))
-      if (globalFilter) url.searchParams.set('filter', String(globalFilter))
-      for (const ht of houseTypeFilter || []) url.searchParams.append('houseType', ht)
+      const url = new URL("/api/residents", window.location.origin);
+      url.searchParams.set("page", String(pagination.pageIndex + 1));
+      url.searchParams.set("pageSize", String(pagination.pageSize));
+      if (globalFilter) url.searchParams.set("filter", String(globalFilter));
+      for (const ht of houseTypeFilter || []) url.searchParams.append("houseType", ht);
 
-      const res = await fetch(url.toString())
-      if (res.status === 204) return { data: [] as Task[] }
-      if (!res.ok) throw new Error('Failed to load residents')
-      const json = await res.json()
-      return { data: json.data as Task[] }
+      const res = await fetch(url.toString());
+      if (res.status === 204) return { data: [] as Task[] };
+      if (!res.ok) throw new Error("Failed to load residents");
+      const json = await res.json();
+      return { data: json.data as Task[] };
     },
     enabled: !data,
-  })
+  });
 
-  const tableData = data || (apiData?.data ?? [])
-  
+  const tableData = data || (apiData?.data ?? []);
+
   const table = useReactTable({
     data: tableData,
     columns,
@@ -225,10 +233,11 @@ export function TasksTable({ data }: DataTableProps) {
     onSortingChange: setSorting,
     onColumnVisibilityChange: setColumnVisibility,
     globalFilterFn: (row, _columnId, filterValue) => {
-      const houseNo = String(row.getValue('houseNo')).toLowerCase()
-      const owners = (row.original.owners || []).map((o) => o.name.toLowerCase())
-      const searchValue = String(filterValue).toLowerCase()
-      return houseNo.includes(searchValue) || owners.some((n) => n.includes(searchValue))
+      const houseNo = String(row.getValue("houseNo")).toLowerCase();
+      const owners = (row.original.owners || []).map((o) => o.name.toLowerCase());
+      const vehicles = (row.original.vehicles || []).map((v) => v.plate.toLowerCase());
+      const searchValue = String(filterValue).toLowerCase();
+      return houseNo.includes(searchValue) || owners.some((n) => n.includes(searchValue)) || vehicles.some((v) => v.includes(searchValue));
     },
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
@@ -239,70 +248,56 @@ export function TasksTable({ data }: DataTableProps) {
     onPaginationChange,
     onGlobalFilterChange,
     onColumnFiltersChange,
-  })
+  });
 
-  const pageCount = table.getPageCount()
+  const pageCount = table.getPageCount();
   useEffect(() => {
-    ensurePageInRange(pageCount)
-  }, [pageCount, ensurePageInRange])
+    ensurePageInRange(pageCount);
+  }, [pageCount, ensurePageInRange]);
 
   return (
     <div
       className={cn(
         'max-sm:has-[div[role="toolbar"]]:mb-16', // Add margin bottom to the table on mobile when the toolbar is visible
-        'flex flex-1 flex-col gap-4'
+        "flex flex-1 flex-col gap-4"
       )}
     >
-      {isLoading && (
-        <div className='text-muted-foreground'>Loading residents...</div>
-      )}
-      {error && (
-        <div className='text-destructive'>{(error as Error).message}</div>
-      )}
-      
-      <div className='flex items-center justify-between'>
+      {isLoading && <div className="text-muted-foreground">Loading residents...</div>}
+      {error && <div className="text-destructive">{(error as Error).message}</div>}
+
+      <div className="flex items-center justify-between">
         <DataTableToolbar
           table={table}
-          searchPlaceholder='Filter by house no or owner name...'
+          searchPlaceholder="Filter by house no, owner name, or vehicle plate..."
           filters={[
             {
-              columnId: 'houseType',
-              title: 'House Type',
+              columnId: "houseType",
+              title: "House Type",
               options: houseTypes,
             },
           ]}
         />
-        <Button onClick={() => {
-          setSelectedResident(null)
-          setDialogOpen(true)
-        }}>
-          <Plus className='h-4 w-4 mr-2' />
+        <Button
+          onClick={() => {
+            setSelectedResident(null);
+            setDialogOpen(true);
+          }}
+        >
+          <Plus className="h-4 w-4 mr-2" />
           Add Resident
         </Button>
       </div>
-      <div className='overflow-hidden rounded-md border'>
+      <div className="overflow-hidden rounded-md border">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => {
                   return (
-                    <TableHead
-                      key={header.id}
-                      colSpan={header.colSpan}
-                      className={cn(
-                        header.column.columnDef.meta?.className,
-                        header.column.columnDef.meta?.thClassName
-                      )}
-                    >
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
+                    <TableHead key={header.id} colSpan={header.colSpan} className={cn(header.column.columnDef.meta?.className, header.column.columnDef.meta?.thClassName)}>
+                      {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
                     </TableHead>
-                  )
+                  );
                 })}
               </TableRow>
             ))}
@@ -310,32 +305,17 @@ export function TasksTable({ data }: DataTableProps) {
           <TableBody>
             {table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
-                <TableRow
-                  key={row.id}
-                  data-state={row.getIsSelected() && 'selected'}
-                >
+                <TableRow key={row.id} data-state={row.getIsSelected() && "selected"}>
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell
-                      key={cell.id}
-                      className={cn(
-                        cell.column.columnDef.meta?.className,
-                        cell.column.columnDef.meta?.tdClassName
-                      )}
-                    >
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
-                      )}
+                    <TableCell key={cell.id} className={cn(cell.column.columnDef.meta?.className, cell.column.columnDef.meta?.tdClassName)}>
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </TableCell>
                   ))}
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell
-                  colSpan={columns.length}
-                  className='h-24 text-center'
-                >
+                <TableCell colSpan={columns.length} className="h-24 text-center">
                   No results.
                 </TableCell>
               </TableRow>
@@ -343,16 +323,10 @@ export function TasksTable({ data }: DataTableProps) {
           </TableBody>
         </Table>
       </div>
-      <DataTablePagination table={table} className='mt-auto' />
-      
-      <ResidentDialog
-        open={dialogOpen}
-        onOpenChange={setDialogOpen}
-        resident={selectedResident}
-        onSubmit={handleSubmit}
-        isLoading={isSubmitting}
-      />
-      
+      <DataTablePagination table={table} className="mt-auto" />
+
+      <ResidentDialog open={dialogOpen} onOpenChange={setDialogOpen} resident={selectedResident} onSubmit={handleSubmit} isLoading={isSubmitting} />
+
       <ResidentDeleteDialog
         open={deleteDialogOpen}
         onOpenChange={setDeleteDialogOpen}
@@ -361,5 +335,5 @@ export function TasksTable({ data }: DataTableProps) {
         isLoading={deleteResidentMutation.isPending}
       />
     </div>
-  )
+  );
 }

@@ -59,22 +59,6 @@ export function Header({ className, fixed, children, ...props }: HeaderProps) {
         <SidebarTrigger variant="outline" className="max-md:scale-125" />
         <Separator orientation="vertical" className="h-6" />
         {children}
-        {!installed && installEvent && !isIOS && (
-          <div className="ms-auto">
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={async () => {
-                await installEvent.prompt();
-                const result = await installEvent.userChoice;
-                setInstallEvent(null);
-                if (result.outcome === "accepted") setInstalled(true);
-              }}
-            >
-              Install App
-            </Button>
-          </div>
-        )}
       </div>
     </header>
   );

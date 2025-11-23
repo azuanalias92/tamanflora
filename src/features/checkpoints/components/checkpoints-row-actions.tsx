@@ -12,6 +12,8 @@ import { CheckpointDialog } from './checkpoint-dialog'
 import { type Checkpoint, type CheckpointFormData } from '../data/schema'
 import { MoreHorizontal, Edit, Trash } from 'lucide-react'
 import { useAclStore } from '@/stores/acl-store'
+import { useAuthStore } from '@/stores/auth-store'
+import { useQueryClient } from '@tanstack/react-query'
 
 interface DataTableRowActionsProps {
   row: Row<Checkpoint>
@@ -26,16 +28,46 @@ export function DataTableRowActions({ row }: DataTableRowActionsProps) {
 
   const checkpoint = row.original
 
-  const handleEdit = async (_data: CheckpointFormData) => {
-    // In a real app, this would call an API
-    // console.log('Edit checkpoint:', checkpoint.id, data)
-    // Update the mock data or make API call
+  const { auth } = useAuthStore()
+  const queryClient = useQueryClient()
+
+  const handleEdit = async (data: CheckpointFormData) => {
+    const res = await fetch('/api/checkpoints', {
+      method: 'PUT',
+      headers: {
+        'content-type': 'application/json',
+        ...(auth.accessToken ? { Authorization: `Bearer ${auth.accessToken}` } : {}),
+      },
+      body: JSON.stringify({
+        id: checkpoint.id,
+        name: data.name,
+        latitude: data.latitude,
+        longitude: data.longitude,
+      }),
+    })
+
+    if (!res.ok) {
+      throw new Error('Failed to update checkpoint')
+    }
+
+    queryClient.invalidateQueries({ queryKey: ['checkpoints'] })
+    setShowEditDialog(false)
   }
 
   const handleDelete = async () => {
-    // In a real app, this would call an API
-    // console.log('Delete checkpoint:', checkpoint.id)
-    // Remove from mock data or make API call
+    const res = await fetch(`/api/checkpoints?id=${checkpoint.id}`, {
+      method: 'DELETE',
+      headers: {
+        ...(auth.accessToken ? { Authorization: `Bearer ${auth.accessToken}` } : {}),
+      },
+    })
+
+    if (!res.ok) {
+      throw new Error('Failed to delete checkpoint')
+    }
+
+    queryClient.invalidateQueries({ queryKey: ['checkpoints'] })
+    setShowDeleteDialog(false)
   }
 
   return (

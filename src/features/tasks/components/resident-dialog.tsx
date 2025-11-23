@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Plus, X, Car, User as UserIcon } from "lucide-react";
 import { type Task } from "../data/schema";
 import type { User as AppUser } from "@/features/users/data/schema";
+import { useAuthStore } from "@/stores/auth-store";
 
 const ownerSchema = z.object({
   name: z.string().min(1, "Owner name is required"),
@@ -27,7 +28,7 @@ const vehicleSchema = z.object({
 const formSchema = z.object({
   houseNo: z.string().min(1, "House number is required"),
   houseType: z.enum(["own", "homestay"]),
-  owners: z.array(ownerSchema).min(1, "At least one owner is required"),
+  owners: z.array(ownerSchema),
   vehicles: z.array(vehicleSchema),
 });
 
@@ -40,7 +41,7 @@ interface ResidentDialogProps {
 }
 
 export function ResidentDialog({ open, onOpenChange, resident, onSubmit, isLoading }: ResidentDialogProps) {
-  const [owners, setOwners] = useState<Array<{ name: string; phone: string; userId?: string }>>([{ name: "", phone: "" }]);
+  const [owners, setOwners] = useState<Array<{ name: string; phone: string; userId?: string }>>([]);
   const [vehicles, setVehicles] = useState<Array<{ brand: string; model: string; plate: string }>>([]);
   const { data: userOptions } = useQuery({
     queryKey: ["users", { page: 1, pageSize: 100 }],
@@ -48,7 +49,12 @@ export function ResidentDialog({ open, onOpenChange, resident, onSubmit, isLoadi
       const url = new URL("/api/users", window.location.origin);
       url.searchParams.set("page", "1");
       url.searchParams.set("pageSize", "100");
-      const res = await fetch(url.toString());
+
+      const token = useAuthStore.getState().auth.accessToken;
+      const res = await fetch(url.toString(), {
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      });
+
       if (res.status === 204) return [] as AppUser[];
       const json = await res.json();
       return (json.data ?? []) as AppUser[];
@@ -60,7 +66,7 @@ export function ResidentDialog({ open, onOpenChange, resident, onSubmit, isLoadi
     defaultValues: {
       houseNo: "",
       houseType: "own",
-      owners: [{ name: "", phone: "" }],
+      owners: [],
       vehicles: [],
     },
   });
@@ -82,12 +88,12 @@ export function ResidentDialog({ open, onOpenChange, resident, onSubmit, isLoadi
       form.reset({
         houseNo: "",
         houseType: "own",
-        owners: [{ name: "", phone: "" }],
+        owners: [],
         vehicles: [],
       });
       // Use setTimeout to avoid setState in effect
       setTimeout(() => {
-        setOwners([{ name: "", phone: "" }]);
+        setOwners([]);
         setVehicles([]);
       }, 0);
     }

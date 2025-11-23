@@ -53,7 +53,7 @@ export async function onRequestGet({ env, request }: { env: { DB: D1Database }; 
     const listStmt = env.DB.prepare(selectSql)
     const result = await listStmt.bind(...params, pageSize, offset).all()
 
-    const data = (result.results || []).map((row: Record<string, unknown>) => ({
+    const data = (result.results || []).map((row: any) => ({
       id: String(row.id ?? ''),
       name: String(row.name ?? ''),
       latitude: Number(row.latitude ?? 0),
@@ -158,6 +158,101 @@ export async function onRequestPost({ env, request }: { env: { DB: D1Database };
     })
   }
 }
+
+export async function onRequestPut({ env, request }: { env: { DB: D1Database }; request: Request }) {
+  try {
+    const contentType = request.headers.get('content-type') || ''
+    if (!contentType.includes('application/json')) {
+      return new Response(JSON.stringify({ error: 'invalid_content_type' }), {
+        status: 400,
+        headers: { 'content-type': 'application/json' },
+      })
+    }
+
+    const authHeader = request.headers.get('Authorization')
+    if (!authHeader || !await hasPermission(env, authHeader, '/checkpoints', 'update')) {
+      return new Response(JSON.stringify({ error: 'forbidden' }), {
+        status: 403,
+        headers: { 'content-type': 'application/json' },
+      })
+    }
+
+    const body = await request.json().catch(() => ({} as any))
+    const id = body.id
+    const name = typeof body.name === 'string' ? body.name.trim() : ''
+    const latitude = Number(body.latitude)
+    const longitude = Number(body.longitude)
+
+    if (!id || !name || Number.isNaN(latitude) || Number.isNaN(longitude)) {
+      return new Response(JSON.stringify({ error: 'invalid_payload' }), {
+        status: 400,
+        headers: { 'content-type': 'application/json' },
+      })
+    }
+
+    const now = new Date().toISOString()
+    const update = await env.DB.prepare(
+      `UPDATE checkpoints 
+       SET name = ?, latitude = ?, longitude = ?, updated_at = ?
+       WHERE id = ?`
+    ).bind(name, latitude, longitude, now, id).run()
+
+    if (!(update as any).success) {
+      return new Response(JSON.stringify({ error: 'update_failed' }), {
+        status: 500,
+        headers: { 'content-type': 'application/json' },
+      })
+    }
+
+    return new Response(JSON.stringify({ id, name, latitude, longitude, updatedAt: now }), {
+      headers: { 'content-type': 'application/json' },
+    })
+  } catch (_) {
+    return new Response(JSON.stringify({ error: 'Failed to update checkpoint' }), {
+      status: 500,
+      headers: { 'content-type': 'application/json' },
+    })
+  }
+}
+
+export async function onRequestDelete({ env, request }: { env: { DB: D1Database }; request: Request }) {
+  try {
+    const authHeader = request.headers.get('Authorization')
+    if (!authHeader || !await hasPermission(env, authHeader, '/checkpoints', 'delete')) {
+      return new Response(JSON.stringify({ error: 'forbidden' }), {
+        status: 403,
+        headers: { 'content-type': 'application/json' },
+      })
+    }
+
+    const url = new URL(request.url)
+    const id = url.searchParams.get('id')
+
+    if (!id) {
+      return new Response(JSON.stringify({ error: 'missing_id' }), {
+        status: 400,
+        headers: { 'content-type': 'application/json' },
+      })
+    }
+
+    const result = await env.DB.prepare('DELETE FROM checkpoints WHERE id = ?').bind(id).run()
+
+    if (!(result as any).success) {
+      return new Response(JSON.stringify({ error: 'delete_failed' }), {
+        status: 500,
+        headers: { 'content-type': 'application/json' },
+      })
+    }
+
+    return new Response(null, { status: 204 })
+  } catch (_) {
+    return new Response(JSON.stringify({ error: 'Failed to delete checkpoint' }), {
+      status: 500,
+      headers: { 'content-type': 'application/json' },
+    })
+  }
+}
+
 async function hasPermission(env: { DB: D1Database }, authHeader: string, resource: string, action: string): Promise<boolean> {
   try {
     // Extract role from auth header (simplified - in real app, verify JWT token)
@@ -188,6 +283,11 @@ interface D1Database {
   prepare: (query: string) => {
     first: <T = unknown>(...args: unknown[]) => Promise<T | null>
     all: <T = unknown>(...args: unknown[]) => Promise<{ results?: T[] }>
-    bind: (...args: unknown[]) => { first: <T = unknown>() => Promise<T | null>; all: <T = unknown>() => Promise<{ results?: T[] }>; run: () => Promise<unknown> }
+    run: <T = unknown>(...args: unknown[]) => Promise<{ success: boolean; meta: any }>
+    bind: (...args: unknown[]) => { 
+      first: <T = unknown>() => Promise<T | null>
+      all: <T = unknown>() => Promise<{ results?: T[] }>
+      run: <T = unknown>() => Promise<{ success: boolean; meta: any }> 
+    }
   }
 }

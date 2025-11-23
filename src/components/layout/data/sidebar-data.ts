@@ -1,4 +1,4 @@
-import { LayoutDashboard, Settings, Users, Command, UserCog, Palette, Lock, CheckCircle, MapPin, Home } from "lucide-react";
+import { LayoutDashboard, Settings, Users, Command, UserCog, Palette, Lock, CheckCircle, MapPin, Home, BookUser } from "lucide-react";
 import { type SidebarData } from "../types";
 
 export const sidebarData: SidebarData = {
@@ -27,7 +27,7 @@ export const sidebarData: SidebarData = {
         {
           title: "Directory",
           url: "/directory",
-          icon: Users,
+          icon: BookUser,
           requiredPermission: { resource: "/directory", action: "read" },
         },
         {
@@ -91,6 +91,12 @@ export const sidebarData: SidebarData = {
               url: "/settings/appearance",
               icon: Palette,
               requiredPermission: { resource: "/settings", action: "read" },
+            },
+            {
+              title: "Check-in Settings",
+              url: "/settings/check-in",
+              icon: Settings,
+              requiredPermission: { resource: "/settings/check-in", action: "read" },
             },
           ],
         },
