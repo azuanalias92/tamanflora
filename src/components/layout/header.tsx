@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { Button } from "@/components/ui/button";
 
 type HeaderProps = React.HTMLAttributes<HTMLElement> & {
   fixed?: boolean;
@@ -11,15 +10,6 @@ type HeaderProps = React.HTMLAttributes<HTMLElement> & {
 
 export function Header({ className, fixed, children, ...props }: HeaderProps) {
   const [offset, setOffset] = useState(0);
-  const [installEvent, setInstallEvent] = useState<
-    | (Event & {
-        prompt: () => Promise<void>;
-        userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
-      })
-    | null
-  >(null);
-  const [installed, setInstalled] = useState(false);
-  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
 
   useEffect(() => {
     const onScroll = () => {
@@ -31,21 +21,6 @@ export function Header({ className, fixed, children, ...props }: HeaderProps) {
 
     // Clean up the event listener on unmount
     return () => document.removeEventListener("scroll", onScroll);
-  }, []);
-
-  useEffect(() => {
-    const handler = (e: Event) => {
-      e.preventDefault();
-      setInstallEvent(
-        e as Event & {
-          prompt: () => Promise<void>;
-          userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
-        }
-      );
-    };
-    window.addEventListener("beforeinstallprompt", handler);
-    setInstalled(window.matchMedia("(display-mode: standalone)").matches || (navigator as any).standalone === true);
-    return () => window.removeEventListener("beforeinstallprompt", handler);
   }, []);
 
   return (

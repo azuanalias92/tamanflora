@@ -1,148 +1,190 @@
-
 interface Env {
-  DB: D1Database
+  DB: D1Database;
 }
 
 function getDistanceFromLatLonInKm(lat1: number, lon1: number, lat2: number, lon2: number) {
-  const R = 6371 // Radius of the earth in km
-  const dLat = deg2rad(lat2 - lat1)
-  const dLon = deg2rad(lon2 - lon1)
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) *
-    Math.sin(dLon / 2) * Math.sin(dLon / 2)
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
-  const d = R * c // Distance in km
-  return d * 1000 // Distance in meters
+  const R = 6371; // Radius of the earth in km
+  const dLat = deg2rad(lat2 - lat1);
+  const dLon = deg2rad(lon2 - lon1);
+  const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  const d = R * c; // Distance in km
+  return d * 1000; // Distance in meters
 }
 
 function deg2rad(deg: number) {
-  return deg * (Math.PI / 180)
+  return deg * (Math.PI / 180);
 }
 
-export async function onRequestGet({ request, env }: { request: Request, env: Env }) {
+export async function onRequestGet({ request, env }: { request: Request; env: Env }) {
   try {
-    const authHeader = request.headers.get('Authorization')
-    if (!authHeader) return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 })
+    const authHeader = request.headers.get("Authorization");
+    if (!authHeader) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
 
-    const url = new URL(request.url)
-    const userId = url.searchParams.get('userId')
-    const checkpointId = url.searchParams.get('checkpointId')
+    const url = new URL(request.url);
+    const userId = url.searchParams.get("userId");
+    const checkpointId = url.searchParams.get("checkpointId");
 
-    if (!userId || !checkpointId) {
-      return new Response(JSON.stringify({ error: 'Missing userId or checkpointId' }), { status: 400 })
+    await ensureTables(env.DB);
+
+    // If both userId and checkpointId are provided, return last check-in for that combination
+    if (userId && checkpointId) {
+      const lastCheckIn = await env.DB.prepare(
+        `
+        SELECT timestamp FROM check_in_logs 
+        WHERE user_id = ? AND checkpoint_id = ?
+        ORDER BY timestamp DESC LIMIT 1
+      `
+      )
+        .bind(userId, checkpointId)
+        .first();
+
+      return new Response(
+        JSON.stringify({
+          lastCheckIn: lastCheckIn ? lastCheckIn.timestamp : null,
+        }),
+        {
+          headers: { "content-type": "application/json" },
+        }
+      );
     }
 
-    await ensureTables(env.DB)
+    // Otherwise, return all check-in logs with checkpoint and resident info
+    const logs = await env.DB.prepare(
+      `
+      SELECT 
+        cl.id,
+        cl.user_id,
+        cl.checkpoint_id,
+        cl.timestamp,
+        c.name as checkpoint_name,
+        r.full_name as resident_name,
+        v.plate_number as vehicle_plate
+      FROM check_in_logs cl
+      LEFT JOIN checkpoints c ON cl.checkpoint_id = c.id
+      LEFT JOIN residents r ON cl.user_id = r.id
+      LEFT JOIN vehicles v ON r.id = v.resident_id
+      ORDER BY cl.timestamp DESC
+    `
+    ).all();
 
-    const lastCheckIn = await env.DB.prepare(`
-      SELECT timestamp FROM check_in_logs 
-      WHERE user_id = ? AND checkpoint_id = ?
-      ORDER BY timestamp DESC LIMIT 1
-    `).bind(userId, checkpointId).first()
-
-    return new Response(JSON.stringify({ 
-      lastCheckIn: lastCheckIn ? lastCheckIn.timestamp : null 
-    }), {
-      headers: { 'content-type': 'application/json' }
-    })
-
+    return new Response(JSON.stringify(logs.results || []), {
+      headers: { "content-type": "application/json" },
+    });
   } catch (e) {
-    return new Response(JSON.stringify({ error: 'Failed to fetch last check-in' }), { status: 500 })
+    return new Response(JSON.stringify({ error: "Failed to fetch check-ins: " + (e as Error).message }), { status: 500 });
   }
 }
 
-export async function onRequestPost({ request, env }: { request: Request, env: Env }) {
+export async function onRequestPost({ request, env }: { request: Request; env: Env }) {
   try {
-    const authHeader = request.headers.get('Authorization')
+    const authHeader = request.headers.get("Authorization");
     // Basic auth check - in real app use middleware
-    if (!authHeader) return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 })
+    if (!authHeader) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
 
-    const body = await request.json() as { latitude: number, longitude: number, userId: string }
-    const { latitude, longitude, userId } = body
+    const body = (await request.json()) as { latitude: number; longitude: number; userId: string };
+    const { latitude, longitude, userId } = body;
 
     if (!latitude || !longitude || !userId) {
-      return new Response(JSON.stringify({ error: 'Missing location or user ID' }), { status: 400 })
+      return new Response(JSON.stringify({ error: "Missing location or user ID" }), { status: 400 });
     }
 
-    await ensureTables(env.DB)
+    await ensureTables(env.DB);
 
     // 1. Get Settings
-    const settings = await env.DB.prepare('SELECT * FROM check_in_settings LIMIT 1').first()
-    const radius = settings?.radius || 50 // meters
-    const timeWindow = settings?.time_window || 5 // minutes
+    const settings = await env.DB.prepare("SELECT * FROM check_in_settings LIMIT 1").first();
+    const radius = settings?.radius || 50; // meters
+    const timeWindow = settings?.time_window || 5; // minutes
 
     // 2. Get Checkpoints
-    const { results: checkpoints } = await env.DB.prepare('SELECT * FROM checkpoints').all()
-    
+    const { results: checkpoints } = await env.DB.prepare("SELECT * FROM checkpoints").all();
+
     if (!checkpoints || checkpoints.length === 0) {
-      return new Response(JSON.stringify({ error: 'No checkpoints defined' }), { status: 400 })
+      return new Response(JSON.stringify({ error: "No checkpoints defined" }), { status: 400 });
     }
 
     // 3. Find nearest checkpoint
-    let nearestCheckpoint: any = null
-    let minDistance = Infinity
+    let nearestCheckpoint: any = null;
+    let minDistance = Infinity;
 
     for (const cp of checkpoints) {
-      const dist = getDistanceFromLatLonInKm(latitude, longitude, cp.latitude as number, cp.longitude as number)
+      const dist = getDistanceFromLatLonInKm(latitude, longitude, cp.latitude as number, cp.longitude as number);
       if (dist < minDistance) {
-        minDistance = dist
-        nearestCheckpoint = cp
+        minDistance = dist;
+        nearestCheckpoint = cp;
       }
     }
 
     // 4. Validate Geofence
     if (minDistance > radius) {
-      return new Response(JSON.stringify({ 
-        error: `You are too far from any checkpoint. Nearest is ${Math.round(minDistance)}m away (Max ${radius}m).` 
-      }), { status: 400 })
+      return new Response(
+        JSON.stringify({
+          error: `You are too far from any checkpoint. Nearest is ${Math.round(minDistance)}m away (Max ${radius}m).`,
+        }),
+        { status: 400 }
+      );
     }
 
     // 5. Validate Rate Limit
-    const timeWindowMs = timeWindow * 60 * 1000
-    const cutoffTime = new Date(Date.now() - timeWindowMs).toISOString()
+    const timeWindowMs = timeWindow * 60 * 1000;
+    const cutoffTime = new Date(Date.now() - timeWindowMs).toISOString();
 
-    const lastCheckIn = await env.DB.prepare(`
+    const lastCheckIn = await env.DB.prepare(
+      `
       SELECT timestamp FROM check_in_logs 
       WHERE user_id = ? AND checkpoint_id = ? AND timestamp > ?
       ORDER BY timestamp DESC LIMIT 1
-    `).bind(userId, nearestCheckpoint.id, cutoffTime).first()
+    `
+    )
+      .bind(userId, nearestCheckpoint.id, cutoffTime)
+      .first();
 
     if (lastCheckIn) {
-      const lastTime = new Date(lastCheckIn.timestamp as string).getTime()
-      const nextAllowed = new Date(lastTime + timeWindowMs)
-      const minutesLeft = Math.ceil((nextAllowed.getTime() - Date.now()) / 60000)
-      
-      return new Response(JSON.stringify({ 
-        error: `You checked in here recently. Please wait ${minutesLeft} minutes.` 
-      }), { status: 429 })
+      const lastTime = new Date(lastCheckIn.timestamp as string).getTime();
+      const nextAllowed = new Date(lastTime + timeWindowMs);
+      const minutesLeft = Math.ceil((nextAllowed.getTime() - Date.now()) / 60000);
+
+      return new Response(
+        JSON.stringify({
+          error: `You checked in here recently. Please wait ${minutesLeft} minutes.`,
+        }),
+        { status: 429 }
+      );
     }
 
     // 6. Record Check-in
-    const id = crypto.randomUUID()
-    const timestamp = new Date().toISOString()
-    
-    await env.DB.prepare(`
+    const id = crypto.randomUUID();
+    const timestamp = new Date().toISOString();
+
+    await env.DB.prepare(
+      `
       INSERT INTO check_in_logs (id, user_id, checkpoint_id, latitude, longitude, timestamp)
       VALUES (?, ?, ?, ?, ?, ?)
-    `).bind(id, userId, nearestCheckpoint.id, latitude, longitude, timestamp).run()
+    `
+    )
+      .bind(id, userId, nearestCheckpoint.id, latitude, longitude, timestamp)
+      .run();
 
-    return new Response(JSON.stringify({ 
-      success: true, 
-      message: `Checked in at ${nearestCheckpoint.name}`,
-      checkpoint: nearestCheckpoint.name,
-      timestamp 
-    }), {
-      headers: { 'content-type': 'application/json' }
-    })
-
+    return new Response(
+      JSON.stringify({
+        success: true,
+        message: `Checked in at ${nearestCheckpoint.name}`,
+        checkpoint: nearestCheckpoint.name,
+        timestamp,
+      }),
+      {
+        headers: { "content-type": "application/json" },
+      }
+    );
   } catch (e) {
-    return new Response(JSON.stringify({ error: 'Check-in failed: ' + (e as Error).message }), { status: 500 })
+    return new Response(JSON.stringify({ error: "Check-in failed: " + (e as Error).message }), { status: 500 });
   }
 }
 
 async function ensureTables(db: D1Database) {
-  await db.prepare(`
+  await db
+    .prepare(
+      `
     CREATE TABLE IF NOT EXISTS check_in_logs (
       id TEXT PRIMARY KEY,
       user_id TEXT,
@@ -151,15 +193,21 @@ async function ensureTables(db: D1Database) {
       longitude REAL,
       timestamp TEXT
     )
-  `).run()
-  
+  `
+    )
+    .run();
+
   // Ensure settings table too just in case
-  await db.prepare(`
+  await db
+    .prepare(
+      `
     CREATE TABLE IF NOT EXISTS check_in_settings (
       id TEXT PRIMARY KEY,
       radius INTEGER,
       time_window INTEGER,
       updated_at TEXT
     )
-  `).run()
+  `
+    )
+    .run();
 }

@@ -13,7 +13,7 @@
     "knip": "knip",
     "cf:build": "yarn build",
     "cf:dev": "wrangler pages dev dist",
-    "cf:publish": "wrangler pages publish dist --project-name taman-flora-terapung",
+    "cf:publish": "wrangler pages deploy --branch=production",
     "cf:db": "wrangler d1 execute taman-flora-terapung --remote --file schema.sql"
   },
   "dependencies": {
