@@ -24,8 +24,8 @@ export function Users() {
   return (
     <UsersProvider>
       <Header fixed>
-        <Search />
         <div className="ms-auto flex items-center space-x-4">
+          <Search />
           <ThemeSwitch />
           <ConfigDrawer />
           <ProfileDropdown />

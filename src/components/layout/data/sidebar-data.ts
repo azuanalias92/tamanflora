@@ -36,12 +36,7 @@ export const sidebarData: SidebarData = {
           icon: Users,
           requiredPermission: { resource: "/users", action: "read" },
         },
-        {
-          title: "Checkpoints",
-          url: "/checkpoints",
-          icon: MapPin,
-          requiredPermission: { resource: "/checkpoints", action: "read" },
-        },
+
         {
           title: "Homestay",
           url: "/homestay",
@@ -50,7 +45,7 @@ export const sidebarData: SidebarData = {
         },
         {
           title: "Check In",
-          icon: CheckCircle,
+          icon: MapPin,
           items: [
             {
               title: "Check In",
@@ -61,6 +56,16 @@ export const sidebarData: SidebarData = {
               title: "View Logs",
               url: "/check-in-logs",
               requiredPermission: { resource: "/check-in-logs", action: "read" },
+            },
+            {
+              title: "Checkpoints",
+              url: "/checkpoints",
+              requiredPermission: { resource: "/checkpoints", action: "read" },
+            },
+            {
+              title: "Configuration",
+              url: "/settings/check-in",
+              requiredPermission: { resource: "/settings/check-in", action: "read" },
             },
           ],
         },
@@ -80,25 +85,21 @@ export const sidebarData: SidebarData = {
               icon: Lock,
               requiredPermission: { resource: "/settings", action: "read" },
             },
-            {
-              title: "Roles",
-              url: "/roles",
-              icon: Lock,
-              requiredPermission: { resource: "/roles", action: "read" },
-            },
+
             {
               title: "Appearance",
               url: "/settings/appearance",
               icon: Palette,
               requiredPermission: { resource: "/settings", action: "read" },
             },
-            {
-              title: "Check-in Settings",
-              url: "/settings/check-in",
-              icon: Settings,
-              requiredPermission: { resource: "/settings/check-in", action: "read" },
-            },
           ],
+        },
+
+        {
+          title: "Roles",
+          url: "/roles",
+          icon: CheckCircle,
+          requiredPermission: { resource: "/roles", action: "read" },
         },
       ],
     },

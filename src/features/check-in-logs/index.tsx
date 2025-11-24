@@ -9,17 +9,19 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon, Download, Search } from "lucide-react";
+import { CalendarIcon, Download, Search as SearchIcon } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/stores/auth-store";
+import { ConfigDrawer } from "@/components/config-drawer";
+import { Search } from "@/components/search";
 
 interface CheckInLog {
   id: string;
   checkpointId: string;
   checkpointName?: string;
-  residentName?: string;
-  vehiclePlate?: string;
+  userId?: string;
+  userName?: string;
   timestamp: string;
   date: Date;
 }
@@ -46,14 +48,14 @@ export function CheckInLogs() {
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
       });
-      if (!res.ok) throw new Error("Failed to fetch check-ins");
+      if (!res.ok) return [];
       const json = res.status === 204 ? [] : await res.json();
       return (json as any[]).map((item) => ({
         id: item.id,
         checkpointId: item.checkpointId || item.checkpoint_id,
         checkpointName: item.checkpointName || item.checkpoint_name,
-        residentName: item.residentName || item.resident_name,
-        vehiclePlate: item.vehiclePlate || item.vehicle_plate,
+        userId: item.userId || item.user_id,
+        userName: item.userName || item.user_name,
         timestamp: item.timestamp || item.created_at,
         date: new Date(item.timestamp || item.created_at),
       }));
@@ -70,10 +72,36 @@ export function CheckInLogs() {
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
       });
-      if (!res.ok) throw new Error("Failed to fetch checkpoints");
-      return res.json();
+      if (!res.ok) return [];
+      const json = res.status === 204 ? { data: [] } : await res.json();
+      return json.data || [];
     },
   });
+
+  const { data: users = [] } = useQuery({
+    queryKey: ["users-for-check-in-logs"],
+    queryFn: async () => {
+      const token = useAuthStore.getState().auth.accessToken;
+      const res = await fetch("/api/users?pageSize=100", {
+        headers: {
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+      });
+      if (!res.ok) return [];
+      const json = await res.json();
+      return json.data || [];
+    },
+  });
+
+  const userNameById = useMemo(() => {
+    const map = new Map<string, string>();
+    (users as any[]).forEach((u) => {
+      const id = String(u.id ?? "");
+      const name = String((u.firstName || "") + " " + (u.lastName || "")).trim() || String(u.username || "");
+      if (id) map.set(id, name || id);
+    });
+    return map;
+  }, [users]);
 
   // Filter and group logs
   const groupedLogs = useMemo(() => {
@@ -83,8 +111,7 @@ export function CheckInLogs() {
     if (searchTerm) {
       filtered = filtered.filter(
         (log) =>
-          log.residentName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          log.vehiclePlate?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (log.userName || userNameById.get(String(log.userId)) || "-").toLowerCase().includes(searchTerm.toLowerCase()) ||
           log.checkpointName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
           format(log.date, "dd/MM/yyyy p").toLowerCase().includes(searchTerm.toLowerCase())
       );
@@ -103,9 +130,9 @@ export function CheckInLogs() {
     // Group by checkpoint
     const grouped: GroupedLogs = {};
     filtered.forEach((log) => {
-      const checkpointId = log.checkpointId;
+      const checkpointId = String(log.checkpointId);
       if (!grouped[checkpointId]) {
-        const checkpoint = checkpoints.find((cp: any) => cp.id === checkpointId);
+        const checkpoint = checkpoints.find((cp: any) => String(cp.id) === checkpointId);
         grouped[checkpointId] = {
           checkpointName: checkpoint?.name || log.checkpointName || checkpointId,
           logs: [],
@@ -126,9 +153,14 @@ export function CheckInLogs() {
 
   const exportLogs = () => {
     const csvContent = [
-      ["Checkpoint", "Resident", "Vehicle Plate", "Date", "Time"],
+      ["Checkpoint", "User", "Date", "Time"],
       ...Object.entries(groupedLogs).flatMap(([_, group]) =>
-        group.logs.map((log) => [group.checkpointName, log.residentName || "-", log.vehiclePlate || "-", format(log.date, "yyyy-MM-dd"), format(log.date, "HH:mm:ss")])
+        group.logs.map((log) => [
+          group.checkpointName,
+          userNameById.get(String(log.userId)) || log.userName || log.userId || "-",
+          format(log.date, "yyyy-MM-dd"),
+          format(log.date, "HH:mm:ss"),
+        ])
       ),
     ]
       .map((row) => row.join(","))
@@ -149,11 +181,12 @@ export function CheckInLogs() {
     <>
       <Header fixed>
         <div className="ms-auto flex items-center space-x-4">
+          <Search />
           <ThemeSwitch />
+          <ConfigDrawer />
           <ProfileDropdown />
         </div>
       </Header>
-
       <Main className="flex flex-1 flex-col gap-6 sm:gap-8">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
@@ -174,8 +207,8 @@ export function CheckInLogs() {
             <div className="space-y-2">
               <label className="text-sm font-medium">Search</label>
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input placeholder="Search checkpoint, resident, plate..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-10" />
+                <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input placeholder="Search checkpoint, user..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-10" />
               </div>
             </div>
 
@@ -233,11 +266,8 @@ export function CheckInLogs() {
                   {group.logs.map((log) => (
                     <div key={log.id} className="flex items-center justify-between p-3 bg-muted rounded-lg">
                       <div className="flex-1">
-                        <div className="font-medium">{log.residentName || "Unknown"}</div>
-                        <div className="text-sm text-muted-foreground">
-                          {log.vehiclePlate && `${log.vehiclePlate} • `}
-                          {format(log.date, "dd/MM/yyyy p")}
-                        </div>
+                        <div className="font-medium">{userNameById.get(String(log.userId)) || log.userName || log.userId || "-"}</div>
+                        <div className="text-sm text-muted-foreground">{format(log.date, "dd/MM/yyyy p")}</div>
                       </div>
                       <div className="text-xs text-muted-foreground font-mono">{format(log.date, "HH:mm:ss")}</div>
                     </div>

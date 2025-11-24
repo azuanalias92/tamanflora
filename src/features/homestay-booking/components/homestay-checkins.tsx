@@ -78,14 +78,13 @@ export function HomestayCheckins() {
   return (
     <>
       <Header fixed>
-        <Search />
         <div className="ms-auto flex items-center space-x-4">
+          <Search />
           <ThemeSwitch />
           <ConfigDrawer />
           <ProfileDropdown />
         </div>
       </Header>
-
       <Main className="flex flex-1 flex-col gap-4 sm:gap-6">
         <div className="flex flex-wrap items-end justify-between gap-2">
           <div>
@@ -132,6 +131,11 @@ export function HomestayCheckins() {
                         <Button asChild variant="outline" size="sm">
                           <Link to="/homestay/$homestayId" params={{ homestayId: r.houseNo }}>
                             Check In
+                          </Link>
+                        </Button>
+                        <Button asChild variant="outline" size="sm">
+                          <Link to="/homestay-list/$homestayId" params={{ homestayId: r.houseNo }}>
+                            List
                           </Link>
                         </Button>
                       </TableCell>

@@ -145,12 +145,23 @@ export async function onRequestPost({ env, request }: { env: { DB: D1Database };
 }
 
 function mapRow(row: any) {
+  let plates = [];
+  try {
+    plates = row.plates_json ? JSON.parse(row.plates_json) : [];
+  } catch (e) {
+    console.error("Failed to parse plates_json for row", row.id, e);
+    // Fallback: try to treat as comma-separated string if simple string
+    if (typeof row.plates_json === "string") {
+      plates = [row.plates_json];
+    }
+  }
+
   return {
     id: row.id,
     homestayId: row.homestay_id,
     personInCharge: row.person_in_charge,
     numberOfGuests: row.guests,
-    numberPlates: row.plates_json ? JSON.parse(row.plates_json) : [],
+    numberPlates: plates,
     dateOfArrival: row.arrival,
     dateOfDeparture: row.departure,
     additionalNotes: row.notes,
@@ -168,14 +179,18 @@ async function hasPermission(env: { DB: D1Database }, authHeader: string, resour
 
     if (!userRole) return false;
 
+    // Admin/Owner bypass
+    if (userRole.toLowerCase() === "admin" || userRole.toLowerCase() === "superadmin") return true;
+
     // Get role permissions
     const role = await env.DB.prepare(`SELECT id FROM roles WHERE lower(name) = lower(?)`).bind(userRole).first();
     if (!role) return false;
 
+    // Check permission for the requested resource OR 'homestay-checkins' as fallback
     const permission = await env.DB.prepare(
       `SELECT ${action === "create" ? "can_create" : action === "read" ? "can_read" : action === "update" ? "can_update" : "can_delete"} as allowed
        FROM role_permissions 
-       WHERE role_id = ? AND resource = ?`
+       WHERE role_id = ? AND (resource = ? OR resource = 'homestay-checkins')`
     )
       .bind((role as any).id, resource)
       .first();

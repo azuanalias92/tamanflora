@@ -49,28 +49,32 @@ export async function onRequestGet({ request, env }: { request: Request; env: En
       );
     }
 
-    // Otherwise, return all check-in logs with checkpoint and resident info
-    const logs = await env.DB.prepare(
+    // Otherwise, return all check-in logs with checkpoint info
+    try {
+      const logs = await env.DB.prepare(
+        `
+        SELECT 
+          cl.id,
+          cl.user_id,
+          cl.checkpoint_id,
+          cl.timestamp,
+          c.name as checkpoint_name
+        FROM check_in_logs cl
+        LEFT JOIN checkpoints c ON cl.checkpoint_id = c.id
+        ORDER BY cl.timestamp DESC
       `
-      SELECT 
-        cl.id,
-        cl.user_id,
-        cl.checkpoint_id,
-        cl.timestamp,
-        c.name as checkpoint_name,
-        r.full_name as resident_name,
-        v.plate_number as vehicle_plate
-      FROM check_in_logs cl
-      LEFT JOIN checkpoints c ON cl.checkpoint_id = c.id
-      LEFT JOIN residents r ON cl.user_id = r.id
-      LEFT JOIN vehicles v ON r.id = v.resident_id
-      ORDER BY cl.timestamp DESC
-    `
-    ).all();
+      ).all();
 
-    return new Response(JSON.stringify(logs.results || []), {
-      headers: { "content-type": "application/json" },
-    });
+      return new Response(JSON.stringify(logs.results || []), {
+        headers: { "content-type": "application/json" },
+      });
+    } catch (queryError) {
+      console.error("Query error:", queryError);
+      return new Response(JSON.stringify({ error: "Database query failed: " + (queryError as Error).message }), {
+        status: 500,
+        headers: { "content-type": "application/json" },
+      });
+    }
   } catch (e) {
     return new Response(JSON.stringify({ error: "Failed to fetch check-ins: " + (e as Error).message }), { status: 500 });
   }
@@ -205,6 +209,22 @@ async function ensureTables(db: D1Database) {
       id TEXT PRIMARY KEY,
       radius INTEGER,
       time_window INTEGER,
+      updated_at TEXT
+    )
+  `
+    )
+    .run();
+
+  // Ensure checkpoints table to avoid JOIN failures
+  await db
+    .prepare(
+      `
+    CREATE TABLE IF NOT EXISTS checkpoints (
+      id TEXT PRIMARY KEY,
+      name TEXT,
+      latitude REAL,
+      longitude REAL,
+      created_at TEXT,
       updated_at TEXT
     )
   `

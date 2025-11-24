@@ -25,8 +25,9 @@ export async function onRequestPost({ request, env }: { request: Request; env: {
   }
 
   if (!env || !(env as any).DB || typeof (env as any).DB.prepare !== "function") {
+    const localId = email ? email.split("@")[0] : "user";
     const user = {
-      accountNo: "ACC001",
+      accountNo: localId,
       email,
       role: ["admin"],
       exp: Date.now() + 24 * 60 * 60 * 1000,
@@ -88,7 +89,7 @@ export async function onRequestPost({ request, env }: { request: Request; env: {
   }
 
   const user = {
-    accountNo: "ACC001",
+    accountNo: String(row.id || ""),
     email: String(row.email || email),
     role: [String(row.role || "owner")],
     exp: Date.now() + 24 * 60 * 60 * 1000,

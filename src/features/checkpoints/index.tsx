@@ -12,6 +12,8 @@ import { Button } from "@/components/ui/button";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuthStore } from "@/stores/auth-store";
 import { useAclStore } from "@/stores/acl-store";
+import { ConfigDrawer } from "@/components/config-drawer";
+import { Search } from "@/components/search";
 
 const route = getRouteApi("/_authenticated/checkpoints/");
 
@@ -48,7 +50,9 @@ export function CheckpointsPage() {
     <>
       <Header fixed>
         <div className="ms-auto flex items-center space-x-4">
+          <Search />
           <ThemeSwitch />
+          <ConfigDrawer />
           <ProfileDropdown />
         </div>
       </Header>
