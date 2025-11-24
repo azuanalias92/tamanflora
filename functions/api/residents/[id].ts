@@ -4,21 +4,11 @@ export async function onRequestPut({ env, request, params }: { env: { DB: D1Data
     const body = await request.json()
     
     // Validate required fields
-    if (!body.houseNo || !body.owners || !Array.isArray(body.owners) || body.owners.length === 0) {
-      return new Response(JSON.stringify({ error: 'House number and at least one owner are required' }), {
+    if (!body.houseNo) {
+      return new Response(JSON.stringify({ error: 'House number is required' }), {
         status: 400,
         headers: { 'content-type': 'application/json' },
       })
-    }
-
-    // Validate owners data
-    for (const owner of body.owners) {
-      if (!owner.name || !owner.phone) {
-        return new Response(JSON.stringify({ error: 'Owner name and phone are required' }), {
-          status: 400,
-          headers: { 'content-type': 'application/json' },
-        })
-      }
     }
 
     // Check if resident exists
@@ -35,11 +25,15 @@ export async function onRequestPut({ env, request, params }: { env: { DB: D1Data
 
     const houseNo = String(body.houseNo).trim()
     const houseType = body.houseType === 'homestay' ? 'homestay' : 'own'
-    const owners = body.owners.map((owner: any) => ({
-      name: String(owner.name).trim(),
-      phone: String(owner.phone).trim(),
-      userId: owner.userId ? String(owner.userId) : undefined
-    }))
+    const owners = Array.isArray(body.owners)
+      ? body.owners
+          .map((owner: any) => ({
+            name: String(owner.name || '').trim(),
+            phone: String(owner.phone || '').trim(),
+            userId: owner.userId ? String(owner.userId) : undefined,
+          }))
+          .filter((o) => o.name && o.phone)
+      : []
     const vehicles = Array.isArray(body.vehicles) ? body.vehicles.map((vehicle: any) => ({
       brand: String(vehicle.brand || '').trim(),
       model: String(vehicle.model || '').trim(),

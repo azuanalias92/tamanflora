@@ -207,15 +207,18 @@ export function TasksTable({ data }: DataTableProps) {
       for (const ht of houseTypeFilter || []) url.searchParams.append("houseType", ht);
 
       const res = await fetch(url.toString());
-      if (res.status === 204) return { data: [] as Task[] };
+      if (res.status === 204) return { data: [] as Task[], total: 0, pageSize: pagination.pageSize };
       if (!res.ok) throw new Error("Failed to load residents");
       const json = await res.json();
-      return { data: json.data as Task[] };
+      return { data: (json.data as Task[]) ?? [], total: Number(json.total ?? 0), pageSize: Number(json.pageSize ?? pagination.pageSize) };
     },
     enabled: !data,
   });
 
   const tableData = data || (apiData?.data ?? []);
+  const serverTotal = apiData?.total ?? undefined;
+  const serverPageSize = apiData?.pageSize ?? pagination.pageSize;
+  const computedPageCount = serverTotal ? Math.max(1, Math.ceil(serverTotal / serverPageSize)) : undefined;
 
   const table = useReactTable({
     data: tableData,
@@ -248,6 +251,8 @@ export function TasksTable({ data }: DataTableProps) {
     onPaginationChange,
     onGlobalFilterChange,
     onColumnFiltersChange,
+    manualPagination: !!serverTotal,
+    pageCount: computedPageCount,
   });
 
   const pageCount = table.getPageCount();

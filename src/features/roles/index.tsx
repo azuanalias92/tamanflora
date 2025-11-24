@@ -21,6 +21,7 @@ import { Main } from "@/components/layout/main";
 const roleSchema = z.object({
   name: z.string().min(2, "Enter role name"),
   description: z.string().optional().catch(""),
+  startPage: z.string().optional().catch(""),
 });
 
 type Crud = { create: boolean; read: boolean; update: boolean; delete: boolean };
@@ -33,6 +34,7 @@ export function Roles() {
   const [roles, setRoles] = useState<Array<{ id: string; name: string; description: string }>>([]);
   const [selectedRole, setSelectedRole] = useState<{ id: string; name: string } | null>(null);
   const [matrix, setMatrix] = useState<Record<string, Crud>>({});
+  const [editingRole, setEditingRole] = useState<{ name: string; description: string; startPage: string }>({ name: "", description: "", startPage: "" });
   const acl = useAclStore();
 
   const form = useForm<z.infer<typeof roleSchema>>({
@@ -56,6 +58,11 @@ export function Roles() {
     (async () => {
       const res = await fetch(`/api/roles/${selectedRole.id}`);
       const json = await res.json();
+      setEditingRole({
+        name: String(json.role?.name || selectedRole.name || ""),
+        description: String(json.role?.description || ""),
+        startPage: String(json.role?.start_page || ""),
+      });
       const m: Record<string, Crud> = {};
       for (const r of resourceList()) {
         m[r] = { create: false, read: true, update: false, delete: false };
@@ -80,7 +87,7 @@ export function Roles() {
     const res = await fetch("/api/roles", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify(data),
+      body: JSON.stringify({ name: data.name, description: data.description, startPage: data.startPage }),
     });
     if (!res.ok) {
       toast.error("Failed to create role");
@@ -133,6 +140,30 @@ export function Roles() {
     });
   }
 
+  async function onSaveRoleInfo() {
+    if (!selectedRole) return;
+    if (!editingRole.name.trim()) {
+      toast.error("Name is required");
+      return;
+    }
+    const res = await fetch(`/api/roles/${selectedRole.id}`, {
+      method: "PUT",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ name: editingRole.name.trim(), description: editingRole.description, startPage: editingRole.startPage }),
+    });
+    if (!res.ok) {
+      toast.error("Failed to update role");
+      return;
+    }
+    const updated = await res.json();
+    setRoles((list) => list.map((r) => (r.id === selectedRole.id ? { id: r.id, name: String(updated.name || editingRole.name), description: String(updated.description || editingRole.description) } : r)));
+    setSelectedRole({ id: selectedRole.id, name: editingRole.name.trim() });
+    if (acl.role === updated.name || acl.role === editingRole.name.trim()) {
+      await acl.loadForRole(editingRole.name.trim());
+    }
+    toast.success("Role updated");
+  }
+
   return (
     <>
       <Header>
@@ -149,19 +180,19 @@ export function Roles() {
           <p className="text-muted-foreground">Manage your roles and set permissions.</p>
         </div>
         <Separator className="my-4 lg:my-6" />
-        <div className="grid gap-6">
+        <div className="flex flex-1 min-h-0 flex-col gap-6">
           <Card>
             <CardHeader>
               <CardTitle>Roles</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="flex gap-6">
-                <div className="flex-1">
+              <div className="flex flex-col gap-6 lg:flex-row">
+                <div className="flex-1 overflow-x-auto">
                   <Table>
                     <TableHeader>
                       <TableRow>
                         <TableHead>Name</TableHead>
-                        <TableHead>Description</TableHead>
+                        <TableHead className="hidden sm:table-cell">Description</TableHead>
                         <TableHead></TableHead>
                       </TableRow>
                     </TableHeader>
@@ -173,10 +204,10 @@ export function Roles() {
                       ) : (
                         roles.map((r) => (
                           <TableRow key={r.id}>
-                            <TableCell>{r.name}</TableCell>
-                            <TableCell>{r.description}</TableCell>
+                            <TableCell className="sticky left-0 bg-background">{r.name}</TableCell>
+                            <TableCell className="hidden sm:table-cell">{r.description}</TableCell>
                             <TableCell>
-                              <Button variant="outline" onClick={() => setSelectedRole({ id: r.id, name: r.name })}>
+                              <Button size="sm" variant="outline" onClick={() => setSelectedRole({ id: r.id, name: r.name })}>
                                 Edit ACL
                               </Button>
                             </TableCell>
@@ -186,7 +217,7 @@ export function Roles() {
                     </TableBody>
                   </Table>
                 </div>
-                <div className="w-[360px]">
+                <div className="w-full lg:w-[360px]">
                   <Form {...form}>
                     <form onSubmit={form.handleSubmit(onCreateRole)} className="grid gap-3">
                       <FormField
@@ -215,6 +246,19 @@ export function Roles() {
                           </FormItem>
                         )}
                       />
+                      <FormField
+                        name="startPage"
+                        control={form.control}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Starting Page</FormLabel>
+                            <FormControl>
+                              <Input placeholder="e.g. /dashboard or /check-in" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
                       <Button type="submit">Create Role</Button>
                     </form>
                   </Form>
@@ -224,7 +268,7 @@ export function Roles() {
           </Card>
 
           {selectedRole && (
-            <Card>
+            <Card className="flex flex-1 min-h-0">
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle>ACL: {selectedRole.name}</CardTitle>
@@ -233,11 +277,31 @@ export function Roles() {
                   </Button>
                 </div>
               </CardHeader>
-              <CardContent>
+              <CardContent className="flex-1 min-h-0 overflow-auto">
+                <div className="mb-4 grid gap-3 sm:grid-cols-3">
+                  <Input
+                    value={editingRole.name}
+                    onChange={(e) => setEditingRole((s) => ({ ...s, name: e.target.value }))}
+                    placeholder="Role name"
+                  />
+                  <Input
+                    value={editingRole.description}
+                    onChange={(e) => setEditingRole((s) => ({ ...s, description: e.target.value }))}
+                    placeholder="Description"
+                  />
+                  <Input
+                    value={editingRole.startPage}
+                    onChange={(e) => setEditingRole((s) => ({ ...s, startPage: e.target.value }))}
+                    placeholder="Starting page e.g. /dashboard"
+                  />
+                  <div className="sm:col-span-3">
+                    <Button variant="outline" onClick={onSaveRoleInfo}>Save Role</Button>
+                  </div>
+                </div>
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Resource</TableHead>
+                      <TableHead className="sticky left-0 bg-background">Resource</TableHead>
                       <TableHead>Create</TableHead>
                       <TableHead>Read</TableHead>
                       <TableHead>Update</TableHead>
@@ -247,18 +311,18 @@ export function Roles() {
                   <TableBody>
                     {resources.map((r) => (
                       <TableRow key={r}>
-                        <TableCell>{r}</TableCell>
+                        <TableCell className="sticky left-0 bg-background">{r}</TableCell>
                         <TableCell>
-                          <Checkbox checked={!!matrix[r]?.create} onCheckedChange={() => toggle(r, "create")} />
+                          <Checkbox className="h-5 w-5" checked={!!matrix[r]?.create} onCheckedChange={() => toggle(r, "create")} />
                         </TableCell>
                         <TableCell>
-                          <Checkbox checked={!!matrix[r]?.read} onCheckedChange={() => toggle(r, "read")} />
+                          <Checkbox className="h-5 w-5" checked={!!matrix[r]?.read} onCheckedChange={() => toggle(r, "read")} />
                         </TableCell>
                         <TableCell>
-                          <Checkbox checked={!!matrix[r]?.update} onCheckedChange={() => toggle(r, "update")} />
+                          <Checkbox className="h-5 w-5" checked={!!matrix[r]?.update} onCheckedChange={() => toggle(r, "update")} />
                         </TableCell>
                         <TableCell>
-                          <Checkbox checked={!!matrix[r]?.delete} onCheckedChange={() => toggle(r, "delete")} />
+                          <Checkbox className="h-5 w-5" checked={!!matrix[r]?.delete} onCheckedChange={() => toggle(r, "delete")} />
                         </TableCell>
                       </TableRow>
                     ))}

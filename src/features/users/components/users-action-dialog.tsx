@@ -4,6 +4,7 @@ import { z } from 'zod'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useQueryClient } from '@tanstack/react-query'
+import { useAuthStore } from '@/stores/auth-store'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import {
@@ -25,20 +26,20 @@ import {
 import { Input } from '@/components/ui/input'
 import { PasswordInput } from '@/components/password-input'
 import { SelectDropdown } from '@/components/select-dropdown'
-import { roles } from '../data/data'
+import { useUsersContext } from './users-provider'
 import { type User } from '../data/schema'
 
 const formSchema = z
   .object({
-    firstName: z.string().min(1, 'First Name is required.'),
-    lastName: z.string().min(1, 'Last Name is required.'),
+    firstName: z.string().optional().catch(''),
+    lastName: z.string().optional().catch(''),
     username: z.string().min(1, 'Username is required.'),
-    phoneNumber: z.string().min(1, 'Phone number is required.'),
+    phoneNumber: z.string().optional().catch(''),
     email: z.email({
       error: (iss) => (iss.input === '' ? 'Email is required.' : undefined),
     }),
     password: z.string().transform((pwd) => pwd.trim()),
-    role: z.string().min(1, 'Role is required.'),
+    role: z.string().optional().catch(''),
     confirmPassword: z.string().transform((pwd) => pwd.trim()),
     isEdit: z.boolean(),
   })
@@ -105,6 +106,8 @@ export function UsersActionDialog({
   open,
   onOpenChange,
 }: UserActionDialogProps) {
+  const { roleOptions } = useUsersContext()
+  const token = useAuthStore.getState().auth.accessToken
   const isEdit = !!currentRow
   const queryClient = useQueryClient()
   const form = useForm<UserForm>({
@@ -145,14 +148,14 @@ export function UsersActionDialog({
       if (isEdit && currentRow) {
         res = await fetch(`/api/users/${currentRow.id}`, {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
           body: JSON.stringify(payload),
         })
       } else {
         res = await fetch('/api/users', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
+          headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+          body: JSON.stringify({ ...payload, role: payload.role || undefined }),
         })
       }
       if (!res.ok) {
@@ -299,10 +302,7 @@ export function UsersActionDialog({
                       onValueChange={field.onChange}
                       placeholder='Select a role'
                       className='col-span-4'
-                      items={roles.map(({ label, value }) => ({
-                        label,
-                        value,
-                      }))}
+                      items={roleOptions}
                     />
                     <FormMessage className='col-span-4 col-start-3' />
                   </FormItem>

@@ -65,6 +65,8 @@ export function UsersTable({ data, search, navigate }: DataTableProps) {
     users: apiUsers,
     loading,
     error,
+    total,
+    pageSize: serverPageSize,
   } = useUsers({
     page: pagination.pageIndex + 1,
     pageSize: pagination.pageSize,
@@ -74,6 +76,8 @@ export function UsersTable({ data, search, navigate }: DataTableProps) {
   });
 
   const tableData = data || (apiUsers as User[]);
+  const serverTotal = total ?? undefined;
+  const computedPageCount = serverTotal ? Math.max(1, Math.ceil(serverTotal / (serverPageSize ?? pagination.pageSize))) : undefined;
 
   const table = useReactTable({
     data: tableData,
@@ -97,6 +101,8 @@ export function UsersTable({ data, search, navigate }: DataTableProps) {
     getSortedRowModel: getSortedRowModel(),
     getFacetedRowModel: getFacetedRowModel(),
     getFacetedUniqueValues: getFacetedUniqueValues(),
+    manualPagination: !!serverTotal,
+    pageCount: computedPageCount,
   });
 
   useEffect(() => {

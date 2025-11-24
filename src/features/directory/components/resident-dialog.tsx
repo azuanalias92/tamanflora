@@ -14,15 +14,15 @@ import type { User as AppUser } from "@/features/users/data/schema";
 import { useAuthStore } from "@/stores/auth-store";
 
 const ownerSchema = z.object({
-  name: z.string().min(1, "Owner name is required"),
-  phone: z.string().min(1, "Phone number is required"),
+  name: z.string().default(""),
+  phone: z.string().default(""),
   userId: z.string().optional(),
 });
 
 const vehicleSchema = z.object({
-  brand: z.string().min(1, "Brand is required"),
-  model: z.string().min(1, "Model is required"),
-  plate: z.string().min(1, "Plate number is required"),
+  brand: z.string().default(""),
+  model: z.string().default(""),
+  plate: z.string().default(""),
 });
 
 const formSchema = z.object({
@@ -62,7 +62,7 @@ export function ResidentDialog({ open, onOpenChange, resident, onSubmit, isLoadi
   });
 
   const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
+    resolver: zodResolver(formSchema) as any,
     defaultValues: {
       houseNo: "",
       houseType: "own",
@@ -159,10 +159,10 @@ export function ResidentDialog({ open, onOpenChange, resident, onSubmit, isLoadi
           <DialogDescription>{resident ? "Update resident information" : "Add a new resident to the directory"}</DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
+          <form onSubmit={form.handleSubmit(handleFormSubmit as any)} className="space-y-6">
             <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
+              <FormField<z.infer<typeof formSchema>, "houseNo">
+                control={form.control as any}
                 name="houseNo"
                 render={({ field }) => (
                   <FormItem>
@@ -174,8 +174,8 @@ export function ResidentDialog({ open, onOpenChange, resident, onSubmit, isLoadi
                   </FormItem>
                 )}
               />
-              <FormField
-                control={form.control}
+              <FormField<z.infer<typeof formSchema>, "houseType">
+                control={form.control as any}
                 name="houseType"
                 render={({ field }) => (
                   <FormItem>

@@ -1,7 +1,7 @@
 export async function onRequestGet({ env }: { env: { DB: D1Database } }) {
   await ensureSchema(env)
   const rows = await env.DB.prepare(
-    `SELECT id, name, description FROM roles ORDER BY name`
+    `SELECT id, name, description, start_page FROM roles ORDER BY name`
   ).all()
   return new Response(JSON.stringify(rows.results || []), {
     headers: { 'content-type': 'application/json' },
@@ -13,6 +13,7 @@ export async function onRequestPost({ request, env }: { request: Request; env: {
   const json = await request.json().catch(() => ({} as any))
   const name = typeof json.name === 'string' ? json.name.trim() : ''
   const description = typeof json.description === 'string' ? json.description.trim() : ''
+  const startPage = typeof json.startPage === 'string' ? json.startPage.trim() : ''
   if (!name) {
     return new Response(JSON.stringify({ error: 'invalid_name' }), {
       status: 400,
@@ -21,9 +22,9 @@ export async function onRequestPost({ request, env }: { request: Request; env: {
   }
   const id = crypto.randomUUID()
   const insert = await env.DB.prepare(
-    `INSERT INTO roles (id, name, description, created_at, updated_at) VALUES (?, ?, ?, ?, ?)`
+    `INSERT INTO roles (id, name, description, start_page, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)`
   )
-    .bind(id, name, description, new Date().toISOString(), new Date().toISOString())
+    .bind(id, name, description, startPage, new Date().toISOString(), new Date().toISOString())
     .run()
   if (!insert.success) {
     return new Response(JSON.stringify({ error: 'insert_failed' }), {
@@ -31,7 +32,7 @@ export async function onRequestPost({ request, env }: { request: Request; env: {
       headers: { 'content-type': 'application/json' },
     })
   }
-  return new Response(JSON.stringify({ id, name, description }), {
+  return new Response(JSON.stringify({ id, name, description, start_page: startPage }), {
     headers: { 'content-type': 'application/json' },
   })
 }
@@ -42,10 +43,17 @@ async function ensureSchema(env: { DB: D1Database }) {
       id TEXT PRIMARY KEY,
       name TEXT UNIQUE,
       description TEXT,
+      start_page TEXT,
       created_at TEXT,
       updated_at TEXT
     )`
   ).run()
+  const col = await env.DB.prepare(`SELECT name FROM pragma_table_info('roles') WHERE name = 'start_page'`).first()
+  if (!col) {
+    try {
+      await env.DB.prepare(`ALTER TABLE roles ADD COLUMN start_page TEXT`).run()
+    } catch {}
+  }
   await env.DB.prepare(
     `CREATE TABLE IF NOT EXISTS role_permissions (
       role_id TEXT,

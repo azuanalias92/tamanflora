@@ -72,14 +72,28 @@ export function UserAuthForm({
         } catch {}
       }
       const roles = Array.isArray(json.user?.role) ? json.user.role : []
+      let configuredStart = ''
+      try {
+        const resRoles = await fetch('/api/roles')
+        if (resRoles.ok) {
+          const list = await resRoles.json()
+          const match = (list || []).find((r: any) => String(r.name || '') === String(firstRole))
+          configuredStart = String(match?.start_page || '')
+        }
+      } catch {}
       const isGuard = roles.includes('guard')
       const allowedForGuard = ['/check-in', '/check-in-logs']
       let redirect = redirectTo || ''
       if (redirect.startsWith('/clerk/')) redirect = '/users'
       const isAllowedRedirect = allowedForGuard.some((p) => redirect.startsWith(p))
-      const targetPath = isGuard
-        ? (isAllowedRedirect ? redirect : '/check-in')
-        : (redirect || '/')
+      let targetPath = '/'
+      if (configuredStart && configuredStart.startsWith('/')) {
+        targetPath = configuredStart
+      } else if (isGuard) {
+        targetPath = isAllowedRedirect ? redirect : '/check-in'
+      } else {
+        targetPath = redirect || '/'
+      }
       navigate({ to: targetPath, replace: true })
       return `Welcome back, ${data.email}!`
     })()

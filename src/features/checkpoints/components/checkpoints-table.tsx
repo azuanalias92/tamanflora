@@ -67,7 +67,7 @@ export function CheckpointsTable({ data, search, navigate }: DataTableProps) {
       const res = await fetch(url.toString(), {
         headers: token ? { Authorization: `Bearer ${token}` } : undefined,
       });
-      if (res.status === 204) return { data: [] as Checkpoint[] };
+      if (res.status === 204) return { data: [] as Checkpoint[], total: 0, pageSize: pagination.pageSize };
       if (!res.ok) throw new Error("Failed to load checkpoints");
       const json = await res.json();
       const list = (json.data as any[]).map((c) => ({
@@ -75,12 +75,15 @@ export function CheckpointsTable({ data, search, navigate }: DataTableProps) {
         createdAt: new Date(c.createdAt),
         updatedAt: new Date(c.updatedAt),
       })) as Checkpoint[];
-      return { data: list };
+      return { data: list, total: Number(json.total ?? list.length), pageSize: Number(json.pageSize ?? pagination.pageSize) };
     },
     enabled: !data,
   });
 
   const tableData = data || (apiData?.data ?? []);
+  const serverTotal = apiData?.total ?? undefined;
+  const serverPageSize = apiData?.pageSize ?? pagination.pageSize;
+  const computedPageCount = serverTotal ? Math.max(1, Math.ceil(serverTotal / serverPageSize)) : undefined;
 
   const table = useReactTable({
     data: tableData,
@@ -104,6 +107,8 @@ export function CheckpointsTable({ data, search, navigate }: DataTableProps) {
     getSortedRowModel: getSortedRowModel(),
     getFacetedRowModel: getFacetedRowModel(),
     getFacetedUniqueValues: getFacetedUniqueValues(),
+    manualPagination: !!serverTotal,
+    pageCount: computedPageCount,
   });
 
   return (

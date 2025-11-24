@@ -39,9 +39,20 @@ export const sidebarData: SidebarData = {
 
         {
           title: "Homestay",
-          url: "/homestay",
           icon: Home,
           requiredPermission: { resource: "/homestay", action: "read" },
+          items: [
+            {
+              title: "Homestay Listing",
+              url: "/homestay",
+              requiredPermission: { resource: "/homestay", action: "read" },
+            },
+            {
+              title: "Homestay Record",
+              url: "/homestay-record",
+              requiredPermission: { resource: "/homestay-record", action: "read" },
+            },
+          ],
         },
         {
           title: "Check In",

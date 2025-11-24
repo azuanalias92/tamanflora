@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { useAuthStore } from '@/stores/auth-store'
+import { toast } from 'sonner'
 
 const profileFormSchema = z.object({
   firstName: z.string().min(1, 'First name is required'),
@@ -70,11 +71,21 @@ export function ProfileForm() {
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit(async (data) => {
-          await fetch('/api/profile', {
-            method: 'PATCH',
-            headers: { 'content-type': 'application/json' },
-            body: JSON.stringify(data),
-          })
+          try {
+            const res = await fetch('/api/profile', {
+              method: 'PATCH',
+              headers: { 'content-type': 'application/json' },
+              body: JSON.stringify(data),
+            })
+            if (!res.ok) {
+              const err = await res.json().catch(() => ({ error: 'update_failed' }))
+              toast.error(String(err.error || 'Failed to update profile'))
+              return
+            }
+            toast.success('Profile updated')
+          } catch (e) {
+            toast.error('Failed to update profile')
+          }
         })}
         className='space-y-8'
       >

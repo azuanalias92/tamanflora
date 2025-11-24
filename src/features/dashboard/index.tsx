@@ -32,6 +32,20 @@ export function Dashboard() {
     },
   });
 
+  const { data: residentsTotal } = useQuery({
+    queryKey: ["dashboard-residents-total"],
+    queryFn: async () => {
+      const token = useAuthStore.getState().auth.accessToken;
+      const res = await fetch("/api/residents?page=1&pageSize=1", {
+        headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      });
+      if (res.status === 204) return 0;
+      if (!res.ok) return 0;
+      const json = await res.json();
+      return Number(json.total || 0);
+    },
+  });
+
   const { data: checkinsData } = useQuery({
     queryKey: ["dashboard-homestay-checkins"],
     queryFn: async () => {
@@ -45,7 +59,7 @@ export function Dashboard() {
     },
   });
 
-  const totalResidents = residentsData?.length || 0;
+  const totalResidents = residentsTotal ?? 0;
 
   // Count total vehicles from residents
   const totalVehicles =
