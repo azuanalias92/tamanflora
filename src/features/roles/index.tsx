@@ -174,7 +174,7 @@ export function Roles() {
           <ProfileDropdown />
         </div>
       </Header>
-      <Main fixed>
+      <Main>
         <div className="space-y-0.5">
           <h1 className="text-2xl font-bold tracking-tight md:text-3xl">Roles</h1>
           <p className="text-muted-foreground">Manage your roles and set permissions.</p>
@@ -277,7 +277,7 @@ export function Roles() {
                   </Button>
                 </div>
               </CardHeader>
-              <CardContent className="flex-1 min-h-0 overflow-auto">
+              <CardContent className="flex-1 min-h-0">
                 <div className="mb-4 grid gap-3 sm:grid-cols-3">
                   <Input
                     value={editingRole.name}
