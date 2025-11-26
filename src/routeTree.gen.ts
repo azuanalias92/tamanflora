@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as PaymentRouteImport } from './routes/payment'
 import { Route as ClerkRouteRouteImport } from './routes/clerk/route'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
@@ -35,6 +36,7 @@ import { Route as AuthenticatedDirectoryIndexRouteImport } from './routes/_authe
 import { Route as AuthenticatedCheckpointsIndexRouteImport } from './routes/_authenticated/checkpoints/index'
 import { Route as AuthenticatedCheckInIndexRouteImport } from './routes/_authenticated/check-in/index'
 import { Route as AuthenticatedCheckInLogsIndexRouteImport } from './routes/_authenticated/check-in-logs/index'
+import { Route as AuthenticatedBillingIndexRouteImport } from './routes/_authenticated/billing/index'
 import { Route as ClerkAuthenticatedUserManagementRouteImport } from './routes/clerk/_authenticated/user-management'
 import { Route as ClerkauthSignUpRouteImport } from './routes/clerk/(auth)/sign-up'
 import { Route as ClerkauthSignInRouteImport } from './routes/clerk/(auth)/sign-in'
@@ -42,11 +44,18 @@ import { Route as AuthenticatedSettingsNotificationsRouteImport } from './routes
 import { Route as AuthenticatedSettingsDisplayRouteImport } from './routes/_authenticated/settings/display'
 import { Route as AuthenticatedSettingsCheckInRouteImport } from './routes/_authenticated/settings/check-in'
 import { Route as AuthenticatedSettingsChangePasswordRouteImport } from './routes/_authenticated/settings/change-password'
+import { Route as AuthenticatedSettingsBillingRouteImport } from './routes/_authenticated/settings/billing'
 import { Route as AuthenticatedSettingsAppearanceRouteImport } from './routes/_authenticated/settings/appearance'
 import { Route as AuthenticatedSettingsAccountRouteImport } from './routes/_authenticated/settings/account'
 import { Route as AuthenticatedHomestayListHomestayIdRouteImport } from './routes/_authenticated/homestay-list/$homestayId'
 import { Route as AuthenticatedErrorsErrorRouteImport } from './routes/_authenticated/errors/$error'
+import { Route as AuthenticatedBillingReviewRouteImport } from './routes/_authenticated/billing/review'
 
+const PaymentRoute = PaymentRouteImport.update({
+  id: '/payment',
+  path: '/payment',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ClerkRouteRoute = ClerkRouteRouteImport.update({
   id: '/clerk',
   path: '/clerk',
@@ -182,6 +191,12 @@ const AuthenticatedCheckInLogsIndexRoute =
     path: '/check-in-logs/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedBillingIndexRoute =
+  AuthenticatedBillingIndexRouteImport.update({
+    id: '/billing/',
+    path: '/billing/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const ClerkAuthenticatedUserManagementRoute =
   ClerkAuthenticatedUserManagementRouteImport.update({
     id: '/user-management',
@@ -222,6 +237,12 @@ const AuthenticatedSettingsChangePasswordRoute =
     path: '/change-password',
     getParentRoute: () => AuthenticatedSettingsRouteRoute,
   } as any)
+const AuthenticatedSettingsBillingRoute =
+  AuthenticatedSettingsBillingRouteImport.update({
+    id: '/billing',
+    path: '/billing',
+    getParentRoute: () => AuthenticatedSettingsRouteRoute,
+  } as any)
 const AuthenticatedSettingsAppearanceRoute =
   AuthenticatedSettingsAppearanceRouteImport.update({
     id: '/appearance',
@@ -246,9 +267,16 @@ const AuthenticatedErrorsErrorRoute =
     path: '/errors/$error',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedBillingReviewRoute =
+  AuthenticatedBillingReviewRouteImport.update({
+    id: '/billing/review',
+    path: '/billing/review',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/clerk': typeof ClerkAuthenticatedRouteRouteWithChildren
+  '/payment': typeof PaymentRoute
   '/settings': typeof AuthenticatedSettingsRouteRouteWithChildren
   '/forgot-password': typeof authForgotPasswordRoute
   '/otp': typeof authOtpRoute
@@ -262,10 +290,12 @@ export interface FileRoutesByFullPath {
   '/503': typeof errors503Route
   '/homestay/$homestayId': typeof HomestayHomestayIdRoute
   '/': typeof AuthenticatedIndexRoute
+  '/billing/review': typeof AuthenticatedBillingReviewRoute
   '/errors/$error': typeof AuthenticatedErrorsErrorRoute
   '/homestay-list/$homestayId': typeof AuthenticatedHomestayListHomestayIdRoute
   '/settings/account': typeof AuthenticatedSettingsAccountRoute
   '/settings/appearance': typeof AuthenticatedSettingsAppearanceRoute
+  '/settings/billing': typeof AuthenticatedSettingsBillingRoute
   '/settings/change-password': typeof AuthenticatedSettingsChangePasswordRoute
   '/settings/check-in': typeof AuthenticatedSettingsCheckInRoute
   '/settings/display': typeof AuthenticatedSettingsDisplayRoute
@@ -273,6 +303,7 @@ export interface FileRoutesByFullPath {
   '/clerk/sign-in': typeof ClerkauthSignInRoute
   '/clerk/sign-up': typeof ClerkauthSignUpRoute
   '/clerk/user-management': typeof ClerkAuthenticatedUserManagementRoute
+  '/billing': typeof AuthenticatedBillingIndexRoute
   '/check-in-logs': typeof AuthenticatedCheckInLogsIndexRoute
   '/check-in': typeof AuthenticatedCheckInIndexRoute
   '/checkpoints': typeof AuthenticatedCheckpointsIndexRoute
@@ -285,6 +316,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/clerk': typeof ClerkAuthenticatedRouteRouteWithChildren
+  '/payment': typeof PaymentRoute
   '/forgot-password': typeof authForgotPasswordRoute
   '/otp': typeof authOtpRoute
   '/sign-in': typeof authSignInRoute
@@ -297,10 +329,12 @@ export interface FileRoutesByTo {
   '/503': typeof errors503Route
   '/homestay/$homestayId': typeof HomestayHomestayIdRoute
   '/': typeof AuthenticatedIndexRoute
+  '/billing/review': typeof AuthenticatedBillingReviewRoute
   '/errors/$error': typeof AuthenticatedErrorsErrorRoute
   '/homestay-list/$homestayId': typeof AuthenticatedHomestayListHomestayIdRoute
   '/settings/account': typeof AuthenticatedSettingsAccountRoute
   '/settings/appearance': typeof AuthenticatedSettingsAppearanceRoute
+  '/settings/billing': typeof AuthenticatedSettingsBillingRoute
   '/settings/change-password': typeof AuthenticatedSettingsChangePasswordRoute
   '/settings/check-in': typeof AuthenticatedSettingsCheckInRoute
   '/settings/display': typeof AuthenticatedSettingsDisplayRoute
@@ -308,6 +342,7 @@ export interface FileRoutesByTo {
   '/clerk/sign-in': typeof ClerkauthSignInRoute
   '/clerk/sign-up': typeof ClerkauthSignUpRoute
   '/clerk/user-management': typeof ClerkAuthenticatedUserManagementRoute
+  '/billing': typeof AuthenticatedBillingIndexRoute
   '/check-in-logs': typeof AuthenticatedCheckInLogsIndexRoute
   '/check-in': typeof AuthenticatedCheckInIndexRoute
   '/checkpoints': typeof AuthenticatedCheckpointsIndexRoute
@@ -322,6 +357,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/clerk': typeof ClerkRouteRouteWithChildren
+  '/payment': typeof PaymentRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRouteRouteWithChildren
   '/clerk/(auth)': typeof ClerkauthRouteRouteWithChildren
   '/clerk/_authenticated': typeof ClerkAuthenticatedRouteRouteWithChildren
@@ -337,10 +373,12 @@ export interface FileRoutesById {
   '/(errors)/503': typeof errors503Route
   '/homestay/$homestayId': typeof HomestayHomestayIdRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
+  '/_authenticated/billing/review': typeof AuthenticatedBillingReviewRoute
   '/_authenticated/errors/$error': typeof AuthenticatedErrorsErrorRoute
   '/_authenticated/homestay-list/$homestayId': typeof AuthenticatedHomestayListHomestayIdRoute
   '/_authenticated/settings/account': typeof AuthenticatedSettingsAccountRoute
   '/_authenticated/settings/appearance': typeof AuthenticatedSettingsAppearanceRoute
+  '/_authenticated/settings/billing': typeof AuthenticatedSettingsBillingRoute
   '/_authenticated/settings/change-password': typeof AuthenticatedSettingsChangePasswordRoute
   '/_authenticated/settings/check-in': typeof AuthenticatedSettingsCheckInRoute
   '/_authenticated/settings/display': typeof AuthenticatedSettingsDisplayRoute
@@ -348,6 +386,7 @@ export interface FileRoutesById {
   '/clerk/(auth)/sign-in': typeof ClerkauthSignInRoute
   '/clerk/(auth)/sign-up': typeof ClerkauthSignUpRoute
   '/clerk/_authenticated/user-management': typeof ClerkAuthenticatedUserManagementRoute
+  '/_authenticated/billing/': typeof AuthenticatedBillingIndexRoute
   '/_authenticated/check-in-logs/': typeof AuthenticatedCheckInLogsIndexRoute
   '/_authenticated/check-in/': typeof AuthenticatedCheckInIndexRoute
   '/_authenticated/checkpoints/': typeof AuthenticatedCheckpointsIndexRoute
@@ -362,6 +401,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/clerk'
+    | '/payment'
     | '/settings'
     | '/forgot-password'
     | '/otp'
@@ -375,10 +415,12 @@ export interface FileRouteTypes {
     | '/503'
     | '/homestay/$homestayId'
     | '/'
+    | '/billing/review'
     | '/errors/$error'
     | '/homestay-list/$homestayId'
     | '/settings/account'
     | '/settings/appearance'
+    | '/settings/billing'
     | '/settings/change-password'
     | '/settings/check-in'
     | '/settings/display'
@@ -386,6 +428,7 @@ export interface FileRouteTypes {
     | '/clerk/sign-in'
     | '/clerk/sign-up'
     | '/clerk/user-management'
+    | '/billing'
     | '/check-in-logs'
     | '/check-in'
     | '/checkpoints'
@@ -398,6 +441,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/clerk'
+    | '/payment'
     | '/forgot-password'
     | '/otp'
     | '/sign-in'
@@ -410,10 +454,12 @@ export interface FileRouteTypes {
     | '/503'
     | '/homestay/$homestayId'
     | '/'
+    | '/billing/review'
     | '/errors/$error'
     | '/homestay-list/$homestayId'
     | '/settings/account'
     | '/settings/appearance'
+    | '/settings/billing'
     | '/settings/change-password'
     | '/settings/check-in'
     | '/settings/display'
@@ -421,6 +467,7 @@ export interface FileRouteTypes {
     | '/clerk/sign-in'
     | '/clerk/sign-up'
     | '/clerk/user-management'
+    | '/billing'
     | '/check-in-logs'
     | '/check-in'
     | '/checkpoints'
@@ -434,6 +481,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/_authenticated'
     | '/clerk'
+    | '/payment'
     | '/_authenticated/settings'
     | '/clerk/(auth)'
     | '/clerk/_authenticated'
@@ -449,10 +497,12 @@ export interface FileRouteTypes {
     | '/(errors)/503'
     | '/homestay/$homestayId'
     | '/_authenticated/'
+    | '/_authenticated/billing/review'
     | '/_authenticated/errors/$error'
     | '/_authenticated/homestay-list/$homestayId'
     | '/_authenticated/settings/account'
     | '/_authenticated/settings/appearance'
+    | '/_authenticated/settings/billing'
     | '/_authenticated/settings/change-password'
     | '/_authenticated/settings/check-in'
     | '/_authenticated/settings/display'
@@ -460,6 +510,7 @@ export interface FileRouteTypes {
     | '/clerk/(auth)/sign-in'
     | '/clerk/(auth)/sign-up'
     | '/clerk/_authenticated/user-management'
+    | '/_authenticated/billing/'
     | '/_authenticated/check-in-logs/'
     | '/_authenticated/check-in/'
     | '/_authenticated/checkpoints/'
@@ -474,6 +525,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   ClerkRouteRoute: typeof ClerkRouteRouteWithChildren
+  PaymentRoute: typeof PaymentRoute
   authForgotPasswordRoute: typeof authForgotPasswordRoute
   authOtpRoute: typeof authOtpRoute
   authSignInRoute: typeof authSignInRoute
@@ -489,6 +541,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/payment': {
+      id: '/payment'
+      path: '/payment'
+      fullPath: '/payment'
+      preLoaderRoute: typeof PaymentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/clerk': {
       id: '/clerk'
       path: '/clerk'
@@ -671,6 +730,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCheckInLogsIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/billing/': {
+      id: '/_authenticated/billing/'
+      path: '/billing'
+      fullPath: '/billing'
+      preLoaderRoute: typeof AuthenticatedBillingIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/clerk/_authenticated/user-management': {
       id: '/clerk/_authenticated/user-management'
       path: '/user-management'
@@ -720,6 +786,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsChangePasswordRouteImport
       parentRoute: typeof AuthenticatedSettingsRouteRoute
     }
+    '/_authenticated/settings/billing': {
+      id: '/_authenticated/settings/billing'
+      path: '/billing'
+      fullPath: '/settings/billing'
+      preLoaderRoute: typeof AuthenticatedSettingsBillingRouteImport
+      parentRoute: typeof AuthenticatedSettingsRouteRoute
+    }
     '/_authenticated/settings/appearance': {
       id: '/_authenticated/settings/appearance'
       path: '/appearance'
@@ -748,12 +821,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedErrorsErrorRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/billing/review': {
+      id: '/_authenticated/billing/review'
+      path: '/billing/review'
+      fullPath: '/billing/review'
+      preLoaderRoute: typeof AuthenticatedBillingReviewRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
 interface AuthenticatedSettingsRouteRouteChildren {
   AuthenticatedSettingsAccountRoute: typeof AuthenticatedSettingsAccountRoute
   AuthenticatedSettingsAppearanceRoute: typeof AuthenticatedSettingsAppearanceRoute
+  AuthenticatedSettingsBillingRoute: typeof AuthenticatedSettingsBillingRoute
   AuthenticatedSettingsChangePasswordRoute: typeof AuthenticatedSettingsChangePasswordRoute
   AuthenticatedSettingsCheckInRoute: typeof AuthenticatedSettingsCheckInRoute
   AuthenticatedSettingsDisplayRoute: typeof AuthenticatedSettingsDisplayRoute
@@ -765,6 +846,7 @@ const AuthenticatedSettingsRouteRouteChildren: AuthenticatedSettingsRouteRouteCh
   {
     AuthenticatedSettingsAccountRoute: AuthenticatedSettingsAccountRoute,
     AuthenticatedSettingsAppearanceRoute: AuthenticatedSettingsAppearanceRoute,
+    AuthenticatedSettingsBillingRoute: AuthenticatedSettingsBillingRoute,
     AuthenticatedSettingsChangePasswordRoute:
       AuthenticatedSettingsChangePasswordRoute,
     AuthenticatedSettingsCheckInRoute: AuthenticatedSettingsCheckInRoute,
@@ -782,8 +864,10 @@ const AuthenticatedSettingsRouteRouteWithChildren =
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedSettingsRouteRoute: typeof AuthenticatedSettingsRouteRouteWithChildren
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
+  AuthenticatedBillingReviewRoute: typeof AuthenticatedBillingReviewRoute
   AuthenticatedErrorsErrorRoute: typeof AuthenticatedErrorsErrorRoute
   AuthenticatedHomestayListHomestayIdRoute: typeof AuthenticatedHomestayListHomestayIdRoute
+  AuthenticatedBillingIndexRoute: typeof AuthenticatedBillingIndexRoute
   AuthenticatedCheckInLogsIndexRoute: typeof AuthenticatedCheckInLogsIndexRoute
   AuthenticatedCheckInIndexRoute: typeof AuthenticatedCheckInIndexRoute
   AuthenticatedCheckpointsIndexRoute: typeof AuthenticatedCheckpointsIndexRoute
@@ -797,9 +881,11 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSettingsRouteRoute: AuthenticatedSettingsRouteRouteWithChildren,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
+  AuthenticatedBillingReviewRoute: AuthenticatedBillingReviewRoute,
   AuthenticatedErrorsErrorRoute: AuthenticatedErrorsErrorRoute,
   AuthenticatedHomestayListHomestayIdRoute:
     AuthenticatedHomestayListHomestayIdRoute,
+  AuthenticatedBillingIndexRoute: AuthenticatedBillingIndexRoute,
   AuthenticatedCheckInLogsIndexRoute: AuthenticatedCheckInLogsIndexRoute,
   AuthenticatedCheckInIndexRoute: AuthenticatedCheckInIndexRoute,
   AuthenticatedCheckpointsIndexRoute: AuthenticatedCheckpointsIndexRoute,
@@ -859,6 +945,7 @@ const ClerkRouteRouteWithChildren = ClerkRouteRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   ClerkRouteRoute: ClerkRouteRouteWithChildren,
+  PaymentRoute: PaymentRoute,
   authForgotPasswordRoute: authForgotPasswordRoute,
   authOtpRoute: authOtpRoute,
   authSignInRoute: authSignInRoute,

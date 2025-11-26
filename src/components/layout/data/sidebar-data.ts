@@ -1,4 +1,4 @@
-import { LayoutDashboard, Settings, Users, Command, UserCog, Palette, Lock, CheckCircle, MapPin, Home, BookUser } from "lucide-react";
+import { LayoutDashboard, Settings, Users, Command, UserCog, Palette, Lock, CheckCircle, MapPin, Home, BookUser, CreditCard } from "lucide-react";
 import { type SidebarData } from "../types";
 
 export const sidebarData: SidebarData = {
@@ -29,6 +29,18 @@ export const sidebarData: SidebarData = {
           url: "/directory",
           icon: BookUser,
           requiredPermission: { resource: "/directory", action: "read" },
+        },
+        {
+          title: "Billing",
+          url: "/billing",
+          icon: CreditCard,
+          requiredPermission: { resource: "/billing", action: "read" },
+        },
+        {
+          title: "Payment Review",
+          url: "/billing/review",
+          icon: CheckCircle,
+          requiredPermission: { resource: "/billing", action: "read" },
         },
         {
           title: "Users",
@@ -101,6 +113,11 @@ export const sidebarData: SidebarData = {
               title: "Appearance",
               url: "/settings/appearance",
               icon: Palette,
+              requiredPermission: { resource: "/settings", action: "read" },
+            },
+            {
+              title: "Billing",
+              url: "/settings/billing",
               requiredPermission: { resource: "/settings", action: "read" },
             },
           ],
